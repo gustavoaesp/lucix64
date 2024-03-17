@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo 'copying kernel'
+./scripts/copy_kernel
+
+#sync
+virtualboxvm \
+	--debug \
+	--startvm lucix64

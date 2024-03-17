@@ -1,0 +1,15 @@
+#!/bin/bash
+
+disk_file='./disk.hdd'
+
+#sudo grub-mkstandalone -O i386-efi -o BOOTIA32.EFI "boot/grub/grub.cfg=./arch/x86/grub.cfg"
+sudo grub-mkstandalone -O x86_64-efi -o BOOTX64.EFI "boot/grub/grub.cfg=./arch/x86/grub.cfg"
+sudo losetup -Pf ${disk_file}
+sudo mount /dev/loop0p2 /mnt/lucix
+sudo mount /dev/loop0p1 /mnt/lucix/boot/efi
+sudo cp BOOTX64.EFI /mnt/lucix/boot/efi/EFI/BOOT/
+
+sudo umount -R /mnt/lucix
+sudo losetup --detach /dev/loop0
+
+#sync

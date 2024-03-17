@@ -1,0 +1,55 @@
+#ifndef _APIC_H_
+#define _APIC_H_
+
+#include <stdint.h>
+
+#define APIC_ID_REG			0x20
+#define APIC_VER_REG			0x30
+#define APIC_TASK_PRIORITY_REG		0x80
+#define APIC_ARBITRATION_PRIORITY_REG	0x90
+#define APIC_PROCESSOR_PRIORITY_REG	0xA0
+#define APIC_EOI_REG			0xB0
+#define APIC_LOGICAL_DESTINATION_REG	0xD0
+#define APIC_DESTINATION_FMT_REG	0xE0
+#define APIC_SPURIOUS_INT_VECTOR_REG	0xF0
+#define APIC_ISR			0x100
+#define APIC_TMR			0x180
+#define APIC_IRR			0x200
+#define APIC_ERROR_STATUS_REG		0x280
+#define APIC_ICR			0x300
+//#define APIC_ICR			0x310
+
+#define APIC_LVT_TIMER_REG		0x320
+#define APIC_LVT_THERMAL_SENSOR_REG	0x330
+#define APIC_LVT_PERF_MON_COUNTERS_REG	0x340
+#define APIC_LVT_LINT0_REG		0x350
+#define APIC_LVT_LINT1_REG		0x360
+#define APIC_LVT_ERROR_REG		0x370
+#define APIC_LVT_INIT_COUNT_REG		0x380
+#define APIC_LVT_CURR_COUNT_REG		0x390
+#define	APIC_DIVIDE_CONF_REG		0x3E0
+
+// TIMER VALUES
+#define APIC_TIMER_DIVIDE_BY_2		0x0
+#define APIC_TIMER_DIVIDE_BY_4		0x1
+#define APIC_TIMER_DIVIDE_BY_8		0x2
+#define	APIC_TIMER_DIVIDE_BY_16		0x3
+#define APIC_TIMER_DIVIDE_BY_32		0x8
+#define APIC_TIMER_DIVIDE_BY_64		0x9
+#define APIC_TIMER_DIVIDE_BY_128	0xa
+
+// TIMER CONF
+#define APIC_TIMER_PERIODIC		0x20000
+
+//
+#define APIC_LVT_INT_MASKED		0x10000
+#define APIC_LVT_DELIVERY_PENDING	0x1000
+
+extern volatile void *apic_regs;
+
+extern void init_apic();
+
+extern void apic_write32(uint32_t, uint32_t);
+extern uint32_t apic_read32( uint32_t);
+
+#endif
