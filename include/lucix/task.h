@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <lucix/slab.h>
 
+#ifndef KSTACK_PGORDER
+#define KSTACK_PGORDER 2
+#endif
+
 enum mm_flags {
 	VM_USER	=	0x1,
 	VM_EXEC	=	0x2,
@@ -61,12 +65,23 @@ struct task
 	uint32_t pid;
 	uint32_t secondary_id;
 
-	uint64_t kstack_size;
+	int64_t kstack_size;
+	uint64_t kstack_top;
+	uint64_t ksp;
 	void *kstack;
 
-	void* cpu_state;
+	uint64_t entry;
+
+	void *cpu_state;
 };
 
 void sched_init();
 
+struct task *create_task();
+
+void task_exec(struct task *, void *elf, uint64_t size);
+
+int sched_irq();
+
+extern struct task *current_task;
 #endif

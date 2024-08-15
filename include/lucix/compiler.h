@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+typedef uint64_t time_t;
+
 #define	__packed	__attribute__((packed))
 
 #endif

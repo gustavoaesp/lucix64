@@ -24,7 +24,31 @@ struct gdt_entry {
     uint8_t  base_high;
 } __packed;
 
+struct long_gdt_entry {
+    uint16_t limit_1;
+    uint16_t base_4;
+    uint8_t base_3;
+    uint8_t access;
+    uint8_t limit_0 : 4;
+    uint8_t flags : 4;
+    uint8_t base_1;
+    uint32_t base_0;
+    uint32_t rsvd_;
+};
 
+#define GDT_TSS_ENTRY64(base, limit) \
+    (struct long_gdt_entry)                 \
+    {                                       \
+        .rsvd_ = 0,                         \
+        .base_0 = ((base >> 32) & 0xffffffff),      \
+        .base_1 = ((base >> 24) & 0xff),    \
+        .flags = 2,                         \
+        .limit_0 = ((limit >> 16) & 0xf),  \
+        .access = 0x89,                      \
+        .base_3 = ((base >> 16) & 0xff),    \
+        .base_4 = ((base) & 0xffff),  \
+        .limit_1 = ((limit) & 0xffff)  \
+    }
 
 #define GDT_ENTRY64(gdt_type, gdt_base, gdt_limit, gdt_dpl) \
     (struct gdt_entry)                                    \
@@ -129,12 +153,12 @@ struct gdt_ptr {
     uint16_t iomb;
 };*/
 
-/*
-void gdt_tss_set(struct tss_entry *tss);
-void gdt_tss_set_stack(void *kstack); */
+/*void gdt_tss_set(struct tss_entry64 *tss);
+void gdt_tss_set_stack(void *kstack);*/
 
 struct tss_entry64
 {
+    uint32_t _rsvd0;
 	uint64_t rsp[3];
 	uint64_t _rsvd1;
 	uint64_t IST[7];
@@ -197,5 +221,7 @@ void _gdt_reload_segments(void);
 #define _USER_DS (_USER_DS_N << 3)
 #define _GDT_TSS (_GDT_TSS_N << 3)
 #define _CPU_VAR (_CPU_VAR_N << 3)
+
+extern struct tss_entry64 g_tss;
 
 #endif

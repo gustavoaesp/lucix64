@@ -4,7 +4,7 @@ AS		:=	x86_64-elf-as
 CFLAGS		:=	-std=gnu99 -ffreestanding -m64 -mcmodel=kernel -g
 LINKERLD	:=	linker.ld
 
-PROJDIRS	:=	$(ARCHDIR) mm kernel drivers
+PROJDIRS	:=	$(ARCHDIR) mm kernel drivers fs
 
 SRCFILES	:=	$(shell find $(PROJDIRS) -type f -name "*.c")
 ASMFILES	:=	$(shell find $(PROJDIRS) -type f -name "*.s")
@@ -12,7 +12,7 @@ ASMFILES	:=	$(shell find $(PROJDIRS) -type f -name "*.s")
 OBJFILES	:=	$(patsubst %.c,%.o,$(SRCFILES))
 ASMOBJFILES	:=	$(patsubst %.s,%.o,$(ASMFILES))
 ALLOBJ		:=	$(OBJFILES) $(ASMOBJFILES)
-INCLUDEDIRS	:=	include $(ARCHDIR)/include drivers
+INCLUDEDIRS	:=	include $(ARCHDIR)/include drivers .
 
 #================================================================
 #

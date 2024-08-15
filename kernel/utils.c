@@ -5,6 +5,8 @@ int memcmp(const char* a, const char*b, uint32_t bytes)
 	int sum = 0;
 	for (int i = 0; i < bytes; ++i) {
 		sum += a[i] - b[i];
+		if (sum)
+			return sum;
 	}
 
 	return sum;

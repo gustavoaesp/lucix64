@@ -2,8 +2,9 @@
 #define _LUCIX_VFS_H_
 
 #include <stdint.h>
+#include <lucix/fs/inode.h>
 
-enum fs_node_type
+/*enum fs_node_type
 {
 	FSNODE_FIFO = 1,
 	FSNODE_CHARDEV = 2,
@@ -12,25 +13,23 @@ enum fs_node_type
 	FSNODE_FILE = 5,
 	FSNODE_SYMLINK = 6,
 	FSNODE_SOCKET = 7
-};
+};*/
 
-struct fs_node
+struct namei
 {
-	enum fs_node_type type;
-};
-
-struct file_ops
-{
-	int (*read)(void* dst, uint64_t bytes);
-};
-
-struct file
-{
-	struct fs_node* node;
-	uint64_t size;
-	uint64_t offset;
+	const char *path;
+	uint32_t flags;
 };
 
 void vfs_init();
+
+int vfs_root(const char *fs_type, dev_t device, uint32_t flags);
+
+int vfs_mount(const char *mount_point, const char *fs_type, dev_t device, uint32_t flags);
+
+int vfs_open(struct namei *, uint32_t oflags, uint32_t mode);
+int vfs_read(struct file *, void *dst, int64_t count);
+int vfs_write(struct file *, const void *biff, int64_t count);
+int vfs_close(struct file *);
 
 #endif

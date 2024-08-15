@@ -1,3 +1,0 @@
-void vfs_init()
-{
-}

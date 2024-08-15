@@ -3,6 +3,47 @@
 #include <lucix/printk.h>
 #include <lucix/mm.h>
 
+int is_valid_elf(void *elf, uint64_t size)
+{
+	struct elf_header_64* header = elf;
+	if (memcmp(elf_magic, header->magic, 4)) {
+		printf( "Not a valid elf\n");
+		return 0;
+	} else {
+		printf("Valid elf\n");
+	}
+	
+	if (header->bits == 1) {
+		printf("32bits\n");
+	} else if (header->bits == 2) {
+		printf("64bits\n");
+	} else {
+		printf("Invalid bitcount\n");
+	}
+
+	if (header->endian == 1) {
+		printf("Little-Endian\n");
+	} else if (header->endian == 2) {
+		printf("Big-Endian\n");
+	} else {
+		printf("Invalid endianness\n");
+	}
+
+	switch (header->type) {
+	case elf_type_executable:
+		printf("Executable elf\n");
+		break;
+	default:
+		printf("Invalid elf type\n");
+		return 0;
+	}
+
+	if (header->isa == elf_isa_x64) {
+		printf("ISA: x86_64\n");
+	}
+	return 1;
+}
+
 void load_elf(void* elf, uint64_t size)
 {
 	struct elf_header_64* header = elf;
@@ -52,6 +93,7 @@ void load_elf(void* elf, uint64_t size)
 		printf("* vaddr: %p\n", header_table[i].p_vaddr);
 		printf("* sizef: %d\n", header_table[i].size_in_file);
 		printf("* sizem: %d\n", header_table[i].size_in_mem);
+		printf("* flags: %d\n", header_table[i].flags);
 	}
 
 	struct page* dest_page = alloc_pages(PGALLOC_KERNEL, 0);
@@ -61,6 +103,9 @@ void load_elf(void* elf, uint64_t size)
 	memcpy(dest_page->vaddr, elf + header_table->offset_data, header_table->size_in_mem);
 
 	void (*entry)() = dest_page->vaddr;
+	//void (*entry)() = (void*)header_table->p_vaddr;
+
+	printf("entry: %p\n", entry);
 
 	entry();
 }

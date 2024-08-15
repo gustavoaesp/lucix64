@@ -40,6 +40,30 @@ SECTIONS
 		*(COMMON)
 	} :data
 
+	.init : {
+		__initcall_start = .;
+		*(.init .init.*)
+		__initcall0_start = .;
+		*(.initcall0.init)
+		__initcall1_start = .;
+		*(.initcall1.init)
+		__initcall2_start = .;
+		*(.initcall2.init)
+		__initcall3_start = .;
+		*(.initcall3.init)
+		__initcall4_start = .;
+		*(.initcall4.init)
+		__initcall5_start = .;
+		*(.initcall5.init)
+		__initcallrootfs_start = .;
+		*(.initcallrootfs.init)
+		__initcall6_start = .;
+		*(.initcall6.init)
+		__initcall7_start = .;
+		*(.initcall7.init)
+		__initcall_end = .;
+	} :data
+
 	/DISCARD/ : {
 		*(.eh_frame)
 		*(.node .node.*)

@@ -76,6 +76,8 @@ struct elf_header_entry_64
 	uint64_t alignment;
 } __packed;
 
+int is_valid_elf(void *elf, uint64_t size);
+
 void load_elf(void* elf, uint64_t size);
 
 #endif
