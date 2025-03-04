@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <lucix/fs/inode.h>
+#include <lucix/fs/file.h>
 
 /*enum fs_node_type
 {

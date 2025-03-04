@@ -55,4 +55,6 @@ void paging_init();
 
 void *map_vm_zone(struct vm_zone *zone, uint32_t flags);
 
+extern uint64_t __get_cr2();
+
 #endif

@@ -28,7 +28,8 @@ INC_PARAMS	:= $(foreach d, $(INCLUDEDIRS), -I$d)
 	$(AS) --64 -g $< -o $@
 
 lucix: $(OBJFILES) $(ASMOBJFILES)
-	$(CC) -T $(LINKERLD) -o lucix -ffreestanding -nostdlib -z max-page-size=0x1000 $(ALLOBJ) -lgcc
+	$(CC) -T $(LINKERLD) -o lucix -ffreestanding -nostdlib -z max-page-size=0x1000 $(ALLOBJ) -lgcc \
+		-Xlinker -Map=lucix.map
 
 all: lucix 
 

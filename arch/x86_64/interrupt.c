@@ -2,6 +2,7 @@
 #include <arch/cpu_state.h>
 #include <arch/interrupt.h>
 #include <arch/gdt.h>
+#include <arch/paging.h>
 
 #include <lucix/printk.h>
 #include <lucix/task.h>
@@ -56,22 +57,26 @@ void _exception_handler_stub_noerr(struct interrupt_frame* frame)
 void _exception_handler_stub_err(struct interrupt_frame* frame)
 {
 	printf("Interrupt (ERR)! id: %d\n", frame->interrupt_id);
-	if (frame->interrupt_id == 14) while(1);
+	if (frame->interrupt_id == 14) {
+		printf("addr: %p\n", __get_cr2());
+		printf("rip:  %p\n", frame->exception.err.exception.rip);
+		for(;;) {
+			asm volatile ("hlt");
+		}
+	}
 }
 
-static int counter = 0;
+/*static int counter = 0;*/
 
 void __irq_handler_stub(struct interrupt_frame* frame)
 {
 	if (frame->interrupt_id == 0x20) {
 		/*if (counter++ == 100) {
-			//printf("IRQ Timer (aprox 1s)\n");
+			printf("Timer IRQ (aprox 1s)\n");
 			counter = 0;
 		}*/
-		apic_write32(APIC_EOI_REG, 0);
-		struct arch_x86_cpu_state *cpu = NULL;
 		if (current_task) {
-			cpu = current_task->cpu_state;
+			struct arch_x86_cpu_state *cpu = current_task->cpu_state;
 			cpu->cs = frame->exception.noerr.cs;
 			cpu->ss = frame->exception.noerr.ss;
 			cpu->rax = frame->rax;
@@ -92,33 +97,14 @@ void __irq_handler_stub(struct interrupt_frame* frame)
 			cpu->rsp = frame->exception.noerr.rsp;
 			cpu->rip = frame->exception.noerr.rip;
 			cpu->rflags = frame->exception.noerr.rflags;
+			if (cpu->cs == _KERNEL_CS) {
+				current_task->ksp = cpu->rsp;
+			} else {
+				current_task->ksp = current_task->kstack_top;
+			}
 		}
-		if (sched_irq()) {
-			cpu = current_task->cpu_state;
-			frame->exception.noerr.cs = cpu->cs;
-			frame->exception.noerr.ss = cpu->ss;
-			frame->rax = cpu->rax;
-			frame->rbx = cpu->rbx;
-			frame->rcx = cpu->rcx;
-			frame->rdx = cpu->rdx;
-			frame->rbp = cpu->rbp;
-			frame->rdi = cpu->rdi;
-			frame->rsi = cpu->rsi;
-			frame->r8 = cpu->r8;
-			frame->r9 = cpu->r9;
-			frame->r10 = cpu->r10;
-			frame->r11 = cpu->r11;
-			frame->r12 = cpu->r12;
-			frame->r13 = cpu->r13;
-			frame->r14 = cpu->r14;
-			frame->r15 = cpu->r15;
-			frame->exception.noerr.rsp = cpu->rsp;
-			frame->exception.noerr.rip = cpu->rip;
-			frame->exception.noerr.rflags = cpu->rflags;
-			g_tss.rsp[0] = current_task->ksp;
-
-			jump_to_user(frame);
-		}
+		apic_write32(APIC_EOI_REG, 0);
+		sched_irq();
 
 		return;
 	} else {

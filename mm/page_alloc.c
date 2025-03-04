@@ -34,7 +34,6 @@ uint32_t __get_max_order(uint32_t usable_pages)
 	return MAX_PG_ORDER;
 }
 
-
 void __init_memmap(struct memory_zone* zone)
 {
 	for (int page = 0; page < zone->usable_num_pages; ++page) {
@@ -289,11 +288,14 @@ struct page *alloc_pages(uint32_t flags, uint32_t order)
 
 		p = __alloc_from_zone(zone, order);
 		if (p) {
+			zone->available_pages -= (1 << order);
 			break;
 		}
 	}
 
-	memset(p->vaddr, 0, PAGE_SIZE * (1 << order));
+	if (p->vaddr) {
+		memset(p->vaddr, 0, PAGE_SIZE * (1 << order));
+	}
 
 	return p;
 }
@@ -318,6 +320,8 @@ void free_pages(struct page* p, uint32_t order)
 	if (pfn % (1 << order)) {
 		return;
 	}
+
+	zone->available_pages += (1 << order);
 
 	if (__toggle_bit_pfn_zone(pfn, zone, order)) {
 		list_add(free, &p->list);

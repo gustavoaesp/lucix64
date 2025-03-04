@@ -1,5 +1,6 @@
 #include <lucix/slab.h>
 #include <lucix/mm.h>
+#include <lucix/printk.h>
 #include <arch/paging.h>
 
 #define FREE_LIST_END		(0xdeadbeef)

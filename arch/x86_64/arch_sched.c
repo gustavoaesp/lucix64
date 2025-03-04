@@ -1,27 +1,41 @@
-#include <arch_generic/task_ret.h>
+#include <arch_generic/sched.h>
 #include <arch_generic/cpu.h>
 
 #include <arch/cpu_state.h>
 #include <arch/gdt.h>
 #include <arch/interrupt.h>
+#include <arch/paging.h>
 
+#include <lucix/printk.h>
 #include <lucix/task.h>
 
-void cpu_task_setup(struct task *t, void *cpu_state)
+void cpu_ktask_setup(struct task *t, void (*__entry)(void*), void *args)
 {
-    struct arch_x86_cpu_state *cpu = cpu_state;
+    struct arch_x86_cpu_state *cpu = t->cpu_state;
+    int64_t frame_offset = (PAGE_SIZE << KSTACK_PGORDER) - sizeof(struct interrupt_frame) + 8;
+    struct interrupt_frame *frame = NULL;
+
     if (!cpu) {
+        /* TODO maybe create a slab allocator for this object? */
         t->cpu_state = cpu = kmalloc(sizeof(struct arch_x86_cpu_state), 0);
     }
 
     memset(cpu, 0, sizeof(struct arch_x86_cpu_state));
 
-    cpu->cs = _USER_CS | 3;
-    cpu->ss = _USER_DS | 3;
-    cpu->rip = t->entry;
-    cpu->rsp = 0x00007ffffffffff8;
+    cpu->cs = _KERNEL_CS;
+    cpu->ss = _KERNEL_DS;
+    cpu->rip = __entry;
+    cpu->rsp = t->kstack_top;
+    /* the args pointer for __entry */
+    cpu->rdi = (uint64_t)args;
+
+    cpu->rflags = 0x200;
+
 }
 
+/*
+*   This has to be implemented in assembly
+*/
 extern void __iret_context_switch(
     uint32_t ss,
     struct interrupt_frame *frame
@@ -31,7 +45,8 @@ void cpu_context_switch()
 {
     /* Here we assume that current_task is the new task (this was done by the scheduler)*/
     struct interrupt_frame *frame =
-        (struct interrupt_frame*)((uint64_t)current_task->ksp - sizeof(struct interrupt_frame));
+        (struct interrupt_frame*)
+        ((uint64_t)current_task->ksp - sizeof(struct interrupt_frame) + 8);
     struct arch_x86_cpu_state *cpu_state = current_task->cpu_state;
     cpu_cli();
 

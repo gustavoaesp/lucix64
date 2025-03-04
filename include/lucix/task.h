@@ -75,13 +75,11 @@ struct task
 	void *cpu_state;
 };
 
-void sched_init();
+/*struct task *create_task();*/
 
-struct task *create_task();
-
+/*
 void task_exec(struct task *, void *elf, uint64_t size);
-
-int sched_irq();
+*/
 
 extern struct task *current_task;
 #endif

@@ -54,6 +54,10 @@ __iret_context_switch:
         Remove the interrupt id parameter from the stack
     */
     add     $0x08,  %rsp
+    /*
+    *   NOTE: The pop order of these registers might be fucked up, but tests
+    *   haven't shown any issue.
+    */
 	popq	%r8
 	popq	%r9
 	popq	%r10

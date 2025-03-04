@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+struct file;
+struct user_buffer;
 struct file_ops
 {
 	int (*open)(struct inode *inode, struct file *);

@@ -4,7 +4,7 @@
 #include <lucix/list.h>
 #include <stdint.h>
 
-#define	CACHE_NAME_SIZE	(16)
+#define	CACHE_NAME_SIZE	(64)
 
 typedef struct obj_mem_cache_s obj_mem_cache_t;
 

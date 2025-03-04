@@ -4,6 +4,8 @@
 #include <lucix/list.h>
 #include <lucix/types.h>
 
+struct super_block;
+
 struct super_block_ops {
     struct inode *(*inode_mem_alloc)(struct super_block*);
     int (*inode_mem_free)(struct super_block*, struct inode*);

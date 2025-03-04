@@ -25,7 +25,7 @@ void memset(void *dst, uint8_t val, size_t bytes)
 {
 	for (size_t i = 0; i < bytes; ++i) {
 		uint8_t* b = dst + i;
-		b[i] = val;
+		*b = val;
 	}
 }
 
@@ -34,5 +34,17 @@ char *strcpy(char* dest, const char *b)
 	char* s_ptr = dest;
 	while (*dest++ = *b++);
 
+	return s_ptr;
+}
+
+char *strncpy(char *dst, const char *src, size_t ncount)
+{
+	char *s_ptr = dst;
+	for (int i = 0; i < ncount; ++i) {
+		dst[i] = src[i];
+		if (!dst[i]) {
+			break;
+		}
+	}
 	return s_ptr;
 }
