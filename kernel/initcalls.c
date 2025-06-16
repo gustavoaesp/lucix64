@@ -27,10 +27,11 @@ extern initcall_t __initcall7_start;*/
 
 void do_initcalls()
 {
-    initcall_t *call;
+    void *call;
     call = &__initcall_start;
     while(call < &__initcall_end) {
-        (*call)();
-        call++;
+        initcall_t initcall_idx = *((initcall_t*)call);
+        (*initcall_idx)();
+        call += sizeof(initcall_t);
     };
 }
