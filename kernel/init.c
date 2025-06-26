@@ -4,6 +4,7 @@
 
 #include <lucix/console.h>
 #include <lucix/device.h>
+#include <lucix/vfs.h>
 #include <lucix/init.h>
 #include <lucix/initcall.h>
 #include <lucix/mm.h>
@@ -68,6 +69,8 @@ void start_kernel(struct lucix_startup_data* startup_data)
 
 	printf("module_addr: %p\n", startup_data->ramdisk->addr);
 	printf("module_size: %d\n", startup_data->ramdisk->size);
+
+	vfs_init();
 
 	pci_init();
 

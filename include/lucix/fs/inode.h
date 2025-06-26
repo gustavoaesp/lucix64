@@ -5,6 +5,7 @@
 #include <lucix/block.h>
 #include <lucix/list.h>
 #include <lucix/types.h>
+#include <arch_generic/cpu.h>
 
 typedef uint32_t ino_t;
 typedef uint32_t mode_t;
@@ -34,6 +35,8 @@ struct inode {
     /** How many blocks does this inode use */
     uint32_t blocks, block_size;
 
+    uint32_t refcnt;
+
     struct inode_ops *ops;
     const struct file_ops *default_fops;
     struct super_block* sb;
@@ -62,5 +65,15 @@ struct inode_ops {
     int (*readlink) (struct inode *dir, char *, size_t buf_len);
     int (*follow_link) (struct inode *dir, struct inode *symlink, struct inode **result);
 };
+
+static inline int ino_ref(struct inode *ino)
+{
+    ino->refcnt++;
+}
+
+static inline int ino_deref(struct inode *ino)
+{
+    ino->refcnt--;
+}
 
 #endif

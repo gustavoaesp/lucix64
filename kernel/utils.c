@@ -12,10 +12,10 @@ int memcmp(const char* a, const char*b, uint32_t bytes)
 	return sum;
 }
 
-void memcpy(void *dst, void *src, size_t size)
+void memcpy(void *dst, const void *src, size_t size)
 {
 	uint8_t* dst_ptr = dst;
-	uint8_t* src_ptr = src;
+	const uint8_t* src_ptr = src;
 	for (size_t i = 0; i < size; ++i) {
 		dst_ptr[i] = src_ptr[i];
 	}

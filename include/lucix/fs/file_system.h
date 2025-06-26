@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <lucix/list.h>
+#include <lucix/types.h>
 
 enum {
     FS_NODEV = 1
@@ -17,7 +18,7 @@ struct file_system {
     struct super_block *(*alloc_sb)(void);
     int (*dealloc_sb)(struct super_block*);
 
-    int (*read_sb)(struct super_block *);
+    int (*read_sb)(struct super_block *, dev_t device);
 };
 
 void file_system_register(struct file_system*);

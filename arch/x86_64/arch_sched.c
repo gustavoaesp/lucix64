@@ -48,7 +48,7 @@ void cpu_context_switch()
         (struct interrupt_frame*)
         ((uint64_t)current_task->ksp - sizeof(struct interrupt_frame) + 8);
     struct arch_x86_cpu_state *cpu_state = current_task->cpu_state;
-    cpu_cli();
+    uint64_t irq_state = cpu_irq_save();
 
     g_tss.rsp[0] = current_task->kstack_top;
 
@@ -77,7 +77,7 @@ void cpu_context_switch()
     frame->r14 = cpu_state->r14;
     frame->r15 = cpu_state->r15;
 
-    cpu_sti();
+    cpu_irq_restore(irq_state);
     __iret_context_switch(cpu_state->ss, frame);
     /* we should not reach here*/
 }

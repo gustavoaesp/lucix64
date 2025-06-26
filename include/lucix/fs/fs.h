@@ -11,4 +11,5 @@ enum inode_type {
     INODE_CHARDEV,
     INODE_PIPE
 };
+
 #endif

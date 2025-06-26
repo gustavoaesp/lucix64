@@ -273,8 +273,8 @@ static inline void list_splice_init(struct list_head *list,
  * @head:	the head for your list.
  */
 #define list_for_each(pos, head) \
-	for (pos = (head)->next, prefetch(pos->next); pos != (head); \
-        	pos = pos->next, prefetch(pos->next))
+	for (pos = (head)->next, pos->next; pos != (head); \
+            pos = pos->next, pos->next)
 
 /**
  * __list_for_each	-	iterate over a list
@@ -295,8 +295,8 @@ static inline void list_splice_init(struct list_head *list,
  * @head:	the head for your list.
  */
 #define list_for_each_prev(pos, head) \
-	for (pos = (head)->prev, prefetch(pos->prev); pos != (head); \
-        	pos = pos->prev, prefetch(pos->prev))
+	for (pos = (head)->prev, pos->prev; pos != (head); \
+            pos = pos->prev, pos->prev)
         	
 /**
  * list_for_each_safe	-	iterate over a list safe against removal of list entry
@@ -327,10 +327,10 @@ static inline void list_splice_init(struct list_head *list,
  */
 #define list_for_each_entry_reverse(pos, head, member)			\
 	for (pos = list_entry((head)->prev, typeof(*pos), member),	\
-		     prefetch(pos->member.prev);			\
+		     pos->member.prev;			\
 	     &pos->member != (head); 					\
 	     pos = list_entry(pos->member.prev, typeof(*pos), member),	\
-		     prefetch(pos->member.prev))
+		     pos->member.prev)
 
 /**
  * list_for_each_entry_continue -	iterate over list of given type
@@ -341,10 +341,10 @@ static inline void list_splice_init(struct list_head *list,
  */
 #define list_for_each_entry_continue(pos, head, member) 		\
 	for (pos = list_entry(pos->member.next, typeof(*pos), member),	\
-		     prefetch(pos->member.next);			\
+		     pos->member.next;			\
 	     &pos->member != (head);					\
 	     pos = list_entry(pos->member.next, typeof(*pos), member),	\
-		     prefetch(pos->member.next))
+		     pos->member.next)
 
 /**
  * list_for_each_entry_safe - iterate over list of given type safe against removal of list entry
