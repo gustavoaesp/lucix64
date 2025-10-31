@@ -3,6 +3,15 @@
 
 #include <lucix/fs/inode.h>
 
+struct ino_cache_entry {
+    struct list_head list;
+
+    struct inode *ino;
+    struct super_block *sb;
+};
+
+extern struct list_head ino_cache_list;
+
 /*
 *   Initialize the cache
 */

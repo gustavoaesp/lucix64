@@ -24,7 +24,7 @@ static void hcf(void)
 	}
 }
 
-static void kernel_init_task(void *__unused)
+/*static void kernel_init_task(void *__unused)
 {
 	printf("kernel_init_task\n");
 	for (int i = 0; i < 16; ++i) {
@@ -47,7 +47,7 @@ static void concurrent_task_test(void *__unused)
 	for(;;) {
 		asm volatile ("hlt");
 	}
-}
+}*/
 
 void start_kernel(struct lucix_startup_data* startup_data)
 {
@@ -74,13 +74,14 @@ void start_kernel(struct lucix_startup_data* startup_data)
 
 	pci_init();
 
-	//do_initcalls();
+	do_initcalls();
 	//load_elf(startup_data->ramdisk->addr, startup_data->ramdisk->size);
 	sched_init();
 
 	/*task_exec(t, initramfs_info.addr, initramfs_info.size);*/
-	sched_mk_kernel_task(kernel_init_task, NULL);
-	sched_mk_kernel_task(concurrent_task_test, NULL);
+	/*sched_mk_kernel_task(kernel_init_task, NULL);
+	sched_mk_kernel_task(concurrent_task_test, NULL);*/
+	sched_mk_kernel_task(kinit_task, NULL);
 
 	/*	Given that at this point there is no active task in the scheduler, this will force setting
 	*	up an active task and context switch into that task

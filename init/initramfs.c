@@ -2,6 +2,9 @@
 #include <lucix/init.h>
 #include <lucix/string.h>
 #include <lucix/utils.h>
+#include <lucix/printk.h>
+#include <lucix/vfs.h>
+#include <lucix/slab.h>
 
 struct tar_header
 {                              /* byte offset */
@@ -61,14 +64,76 @@ struct tar_header
 
 static int tar_valid_header(struct tar_header *header)
 {
-    if (memcmp(header->magic, TMAGIC, strlen(TMAGIC))) {
+    if (memcmp(header->magic, TMAGIC, strlen(TMAGIC) - 1)) {
         return -1;
     }
     return 0;
 }
 
+static char* sanitize_name(char *name)
+{
+    while (*name == '.') name++;
+    while (name[strlen(name) - 1] == '/')
+        name[strlen(name) - 1] = '\0';
+
+    return name;
+}
+
+static int process_directory(struct tar_header *header)
+{
+    int ret = 0;
+    char *name = NULL;
+
+    if (!strcmp(header->name, "./") || !strcmp(header->name, "/")) {
+        printf("Skipping root\n");
+        return 0;
+    }
+
+    name = sanitize_name(header->name);
+
+    ret = vfs_mkdir(name, 0);
+
+    printf("initramfs directory: %s\n", name);
+
+    return ret;
+}
+
+static int process_file(struct tar_header *header)
+{
+    int ret = 0;
+    char *name = sanitize_name(header->name);
+
+    printf("initramfs file: %s\n", name);
+
+    return ret;
+}
+
 int unpack_initramfs()
 {
-    struct tar_header *header = initramfs_info.addr;
+    int ret = 0;
+    for (void *ptr = initramfs_info.addr; ptr < initramfs_info.addr + initramfs_info.size; ptr += 512)
+    {
+        struct tar_header *header = ptr;
+
+        if (tar_valid_header(header)) {
+            continue;
+        }
+
+        switch(header->typeflag)
+        {
+        case DIRTYPE:
+            ret = process_directory(header);
+            break;
+        case REGTYPE:
+            ret = process_file(header);
+            break;
+        }
+
+        if (ret) {
+            printf("Something broke: %s\n", header->name);
+            return ret;
+        }
+    }
+
     return 0;
 }

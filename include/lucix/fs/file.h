@@ -2,21 +2,15 @@
 #define _LUCIX_FS_FILE_H_
 
 #include <stdint.h>
+#include <lucix/kernel.h>
 
 struct file;
 struct user_buffer;
 struct file_ops
 {
 	int (*open)(struct inode *inode, struct file *);
-	int (*release)(struct file *);
-	int64_t (*read)(struct file *, void* dst, uint64_t bytes);
-	int (*pread) (struct file *, struct user_buffer, int64_t sz, int64_t off);
-    int (*readdir) (struct file *, struct file_readdir_handler *);
-    int (*read_dent) (struct file *, struct user_buffer, int64_t dent_size);
-    int64_t (*lseek) (struct file *, int64_t offset, int whence);
-	int64_t (*write)(struct file *, const void *src, uint64_t bytes);
-	int (*ioctl) (struct file *, int cmd, struct user_buffer arg);
-    int (*poll) (struct file *, struct poll_table *, int events);
+	int64_t (*read)(struct file *, void __user *dst, uint64_t bytes);
+	int64_t (*write)(struct file *, const void __user *src, uint64_t bytes);
 };
 
 struct file

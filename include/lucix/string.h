@@ -5,4 +5,5 @@ int strcmp(const char *s1, const char *s2);
 
 int strlen(const char *s);
 
+char *strrchr(const char *s, char c);
 #endif

@@ -11,4 +11,6 @@ extern struct initramfs initramfs_info;
 
 void start_kernel(struct lucix_startup_data* startup_data);
 
+void kinit_task(void *__unused);
+
 #endif

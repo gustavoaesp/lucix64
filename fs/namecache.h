@@ -12,6 +12,26 @@ struct qstr {
     uint32_t len;
 };
 
+struct name_entry {
+    struct list_head list;
+    /*
+    *   if this is the root of a mount point it will be pointing to itself
+    */
+    struct inode *parent;
+
+    /*
+    *   name component of the inode
+    */
+    char name[MAX_NAME];
+
+    /*
+    *   The inode that represents this component
+    */
+    struct inode *ino;
+};
+
+extern struct list_head name_cache_list;
+
 /*
 *   Initialize the cache
 */

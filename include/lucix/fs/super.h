@@ -11,9 +11,11 @@ struct super_block_ops {
     int (*inode_mem_free)(struct super_block*, struct inode*);
 
     int (*inode_read)(struct super_block*, struct inode*);
-    int (*inode_write)(struct super_block*);
+    int (*inode_write)(struct super_block*, struct inode*);
 
     int (*inode_delete)(struct super_block*, struct inode*);
+
+    struct inode *(*get_root_inode)(struct super_block *);
 
     int (*sb_write)(struct super_block*);
     int (*sb_put)(struct super_block*);

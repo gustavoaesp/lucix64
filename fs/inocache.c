@@ -2,20 +2,13 @@
 #include <lucix/slab.h>
 #include <lucix/fs/super.h>
 
-struct ino_cache_entry {
-    struct list_head list;
-
-    struct inode *ino;
-    struct super_block *sb;
-};
-
-static struct list_head ino_cache_list;
+struct list_head ino_cache_list;
 
 static obj_mem_cache_t *ino_cache_mem_cache;
 
 int ino_cache_init()
 {
-    create_obj_mem_cache(sizeof(struct ino_cache_entry), 0, 0, "ino-cache");
+    ino_cache_mem_cache = create_obj_mem_cache(sizeof(struct ino_cache_entry), 0, 0, "ino-cache-entry");
     INIT_LIST_HEAD(&ino_cache_list);
 }
 

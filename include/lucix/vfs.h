@@ -16,21 +16,44 @@
 	FSNODE_SOCKET = 7
 };*/
 
-struct namei
-{
-	const char *path;
-	uint32_t flags;
+struct vfs_mount {
+    struct list_head list;
+    struct super_block *super_block;
+    /*
+    *   This points to the inode it mounted on in a parent filesystem
+    *   If this mount is the root mount it will point to the root ino
+    *   itself. It will refcount the inode.
+    */
+    struct inode *mnt_ino;
+	/*
+	*	Root inode of this mount. It is refcounted
+	*/
+    struct inode *root_ino;
 };
+
+extern struct vfs_mount *mnt_root;
 
 void vfs_init();
 
+/*
+*	Set root(can only be called at startup, if there is a root fs already mounted
+*	it will throw error)
+*/
 int vfs_root(const char *fs_type, dev_t device, uint32_t flags);
 
 int vfs_mount(const char *mount_point, const char *fs_type, dev_t device, uint32_t flags);
 
-int vfs_open(struct namei *, uint32_t oflags, uint32_t mode);
-int vfs_read(struct file *, void *dst, int64_t count);
-int vfs_write(struct file *, const void *biff, int64_t count);
+/*
+*	Open a file
+*/
+struct file *vfs_open(const char*, uint32_t oflags, uint32_t mode);
+/*
+*	Create a file
+*/
+int vfs_create(const char*, mode_t);
+int vfs_mkdir(const char*, mode_t);
+int vfs_read(struct file *, void __user *, int64_t count);
+int vfs_write(struct file *, const void __user *, int64_t count);
 int vfs_close(struct file *);
 
 #endif

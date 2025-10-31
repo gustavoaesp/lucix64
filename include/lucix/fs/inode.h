@@ -43,16 +43,20 @@ struct inode {
 };
 
 struct inode_ops {
+    /*
+    *   Only applies if this inode is a directory, it will lookup the name provided in the entries,
+    *   and return the inode in result, 
+    */
     int (*lookup)(struct inode* dir, const char* name, uint32_t namelen, struct inode**);
 
-    int (*truncate)(struct inode*, uint64_t size);
+    /*int (*truncate)(struct inode*, uint64_t size);*/
 
-    sector_t (*blockmap)(struct inode*, sector_t);
-    sector_t (*blockmap_alloc)(struct inode*, sector_t);
+    /*sector_t (*blockmap)(struct inode*, sector_t);
+    sector_t (*blockmap_alloc)(struct inode*, sector_t);*/
 
-    int (*create) (struct inode *dir, const char *name, size_t len, mode_t mode, struct inode **result);
+    int (*create) (struct inode *dir, const char *name, mode_t mode, struct inode **result);
     int (*mkdir) (struct inode *, const char *name, size_t len, mode_t mode);
-    int (*link) (struct inode *dir, struct inode *old, const char *name, size_t len);
+    /*int (*link) (struct inode *dir, struct inode *old, const char *name, size_t len);
     int (*mknod) (struct inode *dir, const char *name, size_t len, mode_t mode, dev_t dev);
 
     int (*unlink) (struct inode *dir, struct inode *entity, const char *name, size_t len);
@@ -63,17 +67,21 @@ struct inode_ops {
 
     int (*symlink) (struct inode *dir, const char *symlink, size_t len, const char *symlink_target);
     int (*readlink) (struct inode *dir, char *, size_t buf_len);
-    int (*follow_link) (struct inode *dir, struct inode *symlink, struct inode **result);
+    int (*follow_link) (struct inode *dir, struct inode *symlink, struct inode **result);*/
 };
 
-static inline int ino_ref(struct inode *ino)
+static inline void ino_ref(struct inode *ino)
 {
+    uint64_t irq_state = cpu_irq_save();
     ino->refcnt++;
+    cpu_irq_restore(irq_state);
 }
 
-static inline int ino_deref(struct inode *ino)
+static inline void ino_deref(struct inode *ino)
 {
+    uint64_t irq_state = cpu_irq_save();
     ino->refcnt--;
+    cpu_irq_restore(irq_state);
 }
 
 #endif
