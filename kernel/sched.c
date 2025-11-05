@@ -47,7 +47,7 @@ static struct task *create_task()
 	t->ksp = t->kstack_top;
 
 	t->mm = mem_cache_alloc_obj(procmm_cache);
-	t->mm->pgtable = mm_create_page_table();
+	t->mm->pgtable = cpu_mm_create_page_table();
 
 	return t;
 }
@@ -154,7 +154,7 @@ void sched_irq()
 		current_task = task_list.next;
 	}
 
-	mm_set_pgtable(current_task->mm->pgtable);
+	cpu_mm_set_pgtable(current_task->mm->pgtable);
 	cpu_context_switch();
 	/* should never reach here */
 }

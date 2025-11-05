@@ -139,7 +139,7 @@ void *map_vm_zone(struct vm_zone *zone, uint32_t flags)
 	return (void*)zone->start_addr;
 }
 
-void *mm_create_page_table()
+void *cpu_mm_create_page_table()
 {
 	void *pgtable = alloc_pages(PGALLOC_KERNEL, 0)->vaddr;
 	memcpy(pgtable, kernel_pgtable, PAGE_SIZE);
@@ -147,12 +147,12 @@ void *mm_create_page_table()
 	return pgtable;
 }
 
-void mm_map_page(void *pgtable, uint64_t phys_addr, uint64_t vaddr, uint32_t vm_flags)
+void cpu_mm_map_page(void *pgtable, uint64_t phys_addr, uint64_t vaddr, uint32_t vm_flags)
 {
 	map_contiguous(pgtable, phys_addr, vaddr, PAGE_SIZE, 0, vm_flags);
 }
 
-void mm_set_pgtable(void *pgtable)
+void cpu_mm_set_pgtable(void *pgtable)
 {
 	set_cr3(VA2PA((uint64_t)pgtable));
 }
