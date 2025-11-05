@@ -12,6 +12,8 @@
 #include <lucix/fs/file_system.h>
 #include <lucix/fs/file.h>
 
+#include <uapi/lucix/fcntl.h>
+
 struct vfs_mount *mnt_root = NULL;
 
 static obj_mem_cache_t *file_mem_cache;
@@ -93,7 +95,47 @@ int vfs_mount_nodev(const char *mount_point, const char *fs_type, uint32_t flags
 
 struct file *vfs_open(const char *path, uint32_t oflags, uint32_t mode)
 {
-    return NULL;
+    struct file *file = NULL;
+    struct inode *ino = NULL;
+    int ret = 0;
+
+    ret = vfs_lookup(path, 0, &ino);
+    if (ret && ino == NULL) {
+    	if ((oflags & O_CREAT) && !(oflags & O_RDONLY)) {
+	    struct inode *parent = NULL;
+	    vfs_lookup(path, LOOKUP_PARENT, &parent);
+	    char *name = strrchr(path, '/');
+	    if (name) name++;
+	    parent->ops->create(parent, name, mode, &ino);
+	} else {
+	    return NULL;
+	}
+    }
+
+    file = mem_cache_alloc_obj(file_mem_cache);
+    file->inode = ino;
+    ino_ref(ino);
+    file->flags = oflags;
+    file->offset = 0;
+    file->ops = ino->default_fops;
+    if (file->ops->open) {
+    	file->ops->open(ino, file);
+    }
+
+    return file;
+}
+
+int vfs_close(struct file *file)
+{
+	if (file->ops->release) {
+		file->ops->release(file->inode, file);
+	}
+
+	ino_deref(file->inode);
+
+	mem_cache_free_obj(file_mem_cache, file);
+
+	return 0;
 }
 
 int vfs_mkdir(const char *path, mode_t mode)

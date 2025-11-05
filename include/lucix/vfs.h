@@ -56,4 +56,10 @@ int vfs_read(struct file *, void __user *, int64_t count);
 int vfs_write(struct file *, const void __user *, int64_t count);
 int vfs_close(struct file *);
 
+/*
+ *    Generic ops
+ */
+int64_t generic_file_write(struct file *, const void *src, size_t count, size_t *pos);
+int64_t generic_file_read(struct file*, void *dst, size_t count, size_t *pos);
+
 #endif

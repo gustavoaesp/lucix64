@@ -13,6 +13,12 @@
 
 #define	MAX_MEM_ZONES	(64)
 
+/* First 8 bits of the flags uint32_t define the usage */
+#define PAGE_USAGE_CACHE        (0x01)
+#define PAGE_USAGE_ANON         (0x02)
+/* The remaining 24 bits are for flags */
+#define PAGE_CACHE_FLAG_DIRTY   (0x100)
+
 struct mem_zone_info {
 	uint64_t phys_base;
 	uint64_t length;
@@ -21,6 +27,10 @@ struct mem_zone_info {
 struct cpu_memory_info {
 	uint32_t num_mem_zones;
 	struct mem_zone_info zones[MAX_MEM_ZONES];
+};
+
+struct page_cache_attr {
+	struct file_page_mapping *owner;
 };
 
 /*
@@ -32,8 +42,11 @@ struct page {
 	struct list_head list;
 	uint32_t flags;
 	void* vaddr;
-
+	union {
+		struct page_cache_attr page_cache_attr;
+	};
 };
+
 typedef struct page mem_map_t;
 /*
  *

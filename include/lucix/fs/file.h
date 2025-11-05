@@ -9,8 +9,9 @@ struct user_buffer;
 struct file_ops
 {
 	int (*open)(struct inode *inode, struct file *);
-	int64_t (*read)(struct file *, void __user *dst, uint64_t bytes);
-	int64_t (*write)(struct file *, const void __user *src, uint64_t bytes);
+	int64_t (*read)(struct file *, void *dst, uint64_t bytes, size_t *pos);
+	int64_t (*write)(struct file *, const void *src, uint64_t bytes, size_t *pos);
+	int (*release)(struct inode *, struct file*);
 };
 
 struct file
@@ -20,7 +21,6 @@ struct file
 
 	uint32_t flags;
 
-	uint64_t size;
 	uint64_t offset;
 
 	void *private_data;

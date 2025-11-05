@@ -5,11 +5,15 @@
 #include <fs/inocache.h>
 
 #include <lucix/errno.h>
+#include <lucix/fs/file.h>
 #include <lucix/fs/file_system.h>
+#include <lucix/fs/mapping.h>
 #include <lucix/initcall.h>
+#include <lucix/mm.h>
 #include <lucix/slab.h>
 #include <lucix/string.h>
 #include <lucix/utils.h>
+#include <lucix/vfs.h>
 
 #include <lucix/printk.h>
 
@@ -17,6 +21,62 @@ static obj_mem_cache_t* ramfs_inode_cache = NULL;
 uint32_t k_ramfs_block_size = 0x1000;
 
 extern struct inode_ops ramfs_ino_ops;
+
+static int ramfs_mapping_readpage(struct file *file, struct file_page_mapping *mapping, struct page *page, int64_t offs)
+{
+	return 0;
+}
+
+static int ramfs_mapping_write_begin(struct file *file, struct file_page_mapping *mapping, size_t pos, size_t len,
+					struct page **dst_page, void *fs_data)
+{
+	struct inode *ino = file->inode;
+	size_t pg_index = pos / PAGE_SIZE;
+
+	if (pg_index >= mapping->nr_pages) {
+		mapping->nr_pages++;
+		struct page **new_array = kmalloc(sizeof(struct page*) * mapping->nr_pages, 0);
+		memcpy (new_array, mapping->pages, sizeof(struct page*) * (mapping->nr_pages - 1));
+		mapping->pages[mapping->nr_pages - 1] = alloc_pages(PGALLOC_KERNEL, 0);
+	}
+
+	if (!mapping->pages[pg_index]) {
+		mapping->pages[pg_index] = alloc_pages(PGALLOC_KERNEL, 0);
+		mapping->pages[pg_index]->page_cache_attr.owner = mapping;
+		mapping->pages[pg_index]->flags = PAGE_USAGE_CACHE;
+	}
+	*dst_page = mapping->pages[pg_index];
+
+	return 0;
+}
+
+static int ramfs_mapping_write_end(struct file *file, struct file_page_mapping *mapping, size_t pos, size_t len,
+					size_t copied, struct page *page, void *fs_data)
+{
+	struct inode *ino = file->inode;
+	if (pos + copied >= ino->size) {
+		ino->size = pos + copied;
+	}
+
+	ino->blocks = ino->size / PAGE_SIZE;
+	ino->blocks += (ino->size % PAGE_SIZE) ? 1 : 0;
+
+	page->flags &= ~PAGE_CACHE_FLAG_DIRTY;
+	return 0;
+}
+
+struct file_page_mapping_ops ramfs_file_mapping_ops = {
+	.readpage = ramfs_mapping_readpage,
+	.write_begin = ramfs_mapping_write_begin,
+	.write_end = ramfs_mapping_write_end
+};
+
+struct file_ops ramfs_file_ops = {
+	.open = NULL,
+	.read = generic_file_read,
+	.write = generic_file_write,
+	.release = NULL
+};
 
 static int ramfs_ino_lookup(struct inode* dir, const char* name, uint32_t namelen, struct inode **out)
 {
@@ -60,6 +120,7 @@ static int ramfs_ino_create_generic(struct inode *dir, const char *name, mode_t 
     new_ino->block_size = PAGE_SIZE;
     new_ino->sb = dir->sb;
     new_ino->ops = &ramfs_ino_ops;
+    new_ino->default_fops = &ramfs_file_ops;
 
     list_add(&new_entry->list_entry, &ramfs_dir->dir_entries.list);
 
@@ -68,6 +129,16 @@ static int ramfs_ino_create_generic(struct inode *dir, const char *name, mode_t 
     *res = new_ino;
     ino_ref(*res);
     ino_cache_insert(dir->sb, *res);
+
+    new_ino->f_map = kmalloc(sizeof(struct file_page_mapping), 0);
+    new_ino->f_map-> nr_pages = 2;
+    new_ino->f_map->pages = kmalloc(sizeof(struct page*) * 2, 0);
+    for (int i = 0; i < 2; ++i) {
+    	new_ino->f_map->pages[i] = NULL;
+    }
+
+    new_ino->f_map->ops = &ramfs_file_mapping_ops;
+    new_ino->f_map->host = new_ino;
 
     return 0;
 }

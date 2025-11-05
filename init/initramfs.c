@@ -6,6 +6,8 @@
 #include <lucix/vfs.h>
 #include <lucix/slab.h>
 
+#include <uapi/lucix/fcntl.h>
+
 struct tar_header
 {                              /* byte offset */
     char name[100];               /*   0 */
@@ -100,10 +102,17 @@ static int process_directory(struct tar_header *header)
 
 static int process_file(struct tar_header *header)
 {
+    void *ptr = header;
+    size_t size = strtol(header->size, header->size + 12, 8);
+
+    ptr += 512;
     int ret = 0;
     char *name = sanitize_name(header->name);
+    struct file *file = vfs_open(name, O_CREAT | O_WRONLY, 0777);
 
-    printf("initramfs file: %s\n", name);
+    file->ops->write(file, ptr, size, &file->offset);
+
+    vfs_close(file);
 
     return ret;
 }
