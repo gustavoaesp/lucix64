@@ -15,6 +15,7 @@ SECTIONS
 	. = 0xffffffff80000000;
 	_kernel_bin_start = .;
 
+	. = ALIGN(0x1000);
 	.text : {
 		*(.text .text.*)
 	} :text
@@ -27,19 +28,23 @@ SECTIONS
 
 	. += CONSTANT(MAXPAGESIZE);
 
+	. = ALIGN(0x1000);
 	.data : {
 		*(.data .data.*)
 	} :data
 
+	. = ALIGN(0x1000);
 	.dynamic : {
 		*(.dynamic)
 	} :data :dynamic
 
+	. = ALIGN(0x1000);
 	.bss : {
 		*(.bss .bss.*)
 		*(COMMON)
 	} :data
 
+	. = ALIGN(0x1000);
 	.init : {
 		__initcall_start = .;
 		*(.init .init.*)
