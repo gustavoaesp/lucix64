@@ -1,10 +1,10 @@
 #include <lucix/utils.h>
 
-int memcmp(const char* a, const char*b, uint32_t bytes)
+int memcmp(const void* a, const void*b, uint32_t bytes)
 {
 	int sum = 0;
 	for (int i = 0; i < bytes; ++i) {
-		sum += a[i] - b[i];
+		sum += ((const uint8_t*)a)[i] - ((const uint8_t*)b)[i];
 		if (sum)
 			return sum;
 	}
@@ -32,7 +32,7 @@ void memset(void *dst, uint8_t val, size_t bytes)
 char *strcpy(char* dest, const char *b)
 {
 	char* s_ptr = dest;
-	while (*dest++ = *b++);
+	while ((*dest++ = *b++));
 
 	return s_ptr;
 }

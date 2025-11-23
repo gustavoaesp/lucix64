@@ -3,14 +3,22 @@
 #include <arch/interrupt.h>
 #include <arch/gdt.h>
 #include <arch/paging.h>
+#include <arch_generic/cpu.h>
 
 #include <lucix/printk.h>
 #include <lucix/task.h>
+#include <lucix/sched.h>
+#include <lucix/page_fault.h>
 
 #define MAX_IDT_DESCRIPTORS	(256)
 
 static struct interrupt_descriptor idt[MAX_IDT_DESCRIPTORS] __attribute__((aligned(0x10)));
 static struct idtr _idtr;
+
+void custom_print(uint64_t val)
+{
+	printf("Custom print: %p\n", val);
+}
 
 static void __load_idtr()
 {
@@ -56,14 +64,39 @@ void _exception_handler_stub_noerr(struct interrupt_frame* frame)
 
 void _exception_handler_stub_err(struct interrupt_frame* frame)
 {
+	uint64_t irq_state = cpu_irq_save();
 	printf("Interrupt (ERR)! id: %d\n", frame->interrupt_id);
+		printf("err %x\n", frame->exception.err.err_code);
+		printf("rsp: %p\n", frame->exception.err.exception.rsp);
+		printf("rip: %p\n", frame->exception.err.exception.rip);
+		printf(" ss: %p\n", frame->exception.err.exception.ss);
+		printf(" cs: %p\n", frame->exception.err.exception.cs);
+		printf(" ts: %p\n", g_tss.rsp[0]);
 	if (frame->interrupt_id == 14) {
-		printf("addr: %p\n", __get_cr2());
-		printf("rip:  %p\n", frame->exception.err.exception.rip);
-		for(;;) {
+		/*printf("addr: %p\n", __get_cr2());
+		printf("rip:  %p\n", frame->exception.err.exception.rip);*/
+		/*for(;;) {
 			asm volatile ("hlt");
-		}
+		}*/
+		uint32_t flags = 0;
+		uint64_t addr = __get_cr2();
+		flags |= (frame->exception.err.err_code & 0x01) ? PGFAULT_PROTECTION : 0;
+		flags |= (frame->exception.err.err_code & 0x02) ? PGFAULT_WRITE : 0;
+		flags |= (frame->exception.err.err_code & 0x04) ? PGFAULT_USR : 0;
+		flags |= (frame->exception.err.err_code & 0x10) ? PGFAULT_INSTRUCTION : 0;
+		printf("Handling addr %p\n", __get_cr2());
+		kernel_page_fault(addr, flags, frame->exception.err.exception.rip);
+		cpu_irq_restore(irq_state);
+		//printf("Reading: %x\n", *((uint32_t*)addr));
+		return;
 	}
+	if (frame->interrupt_id == 13) {
+		while(1);
+	}
+	if (frame->interrupt_id == 12) {
+		while(1);
+	}
+	cpu_irq_restore(irq_state);
 }
 
 /*static int counter = 0;*/
@@ -100,7 +133,7 @@ void __irq_handler_stub(struct interrupt_frame* frame)
 			if (cpu->cs == _KERNEL_CS) {
 				current_task->ksp = cpu->rsp;
 			} else {
-				current_task->ksp = current_task->kstack_top;
+				current_task->ksp = (uint64_t)current_task->kstack + current_task->kstack_size;
 			}
 		}
 		apic_write32(APIC_EOI_REG, 0);

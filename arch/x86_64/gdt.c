@@ -23,7 +23,7 @@ void setup_gdt(void)
 	//gdt_entries[_GDT_TSS_N] = GDT_ENTRY16(GDT_STS_T32A, (uintptr_t)&c->tss, sizeof(c->tss) - 1, GDT_DPL_KERNEL);
 	//gdt_entries[_GDT_TSS_N].des_type = 0;
 
-	//memset(&g_tss, 0, sizeof(struct tss_entry64));
+	memset(&g_tss, 0, sizeof(struct tss_entry64));
 	g_tss.iopb = sizeof(struct tss_entry64);
 
 	gdt_flush(gdt_entries, sizeof(struct gdt_entry) * 7);

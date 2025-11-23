@@ -55,6 +55,7 @@ int vfs_mkdir(const char*, mode_t);
 int vfs_read(struct file *, void __user *, int64_t count);
 int vfs_write(struct file *, const void __user *, int64_t count);
 int vfs_close(struct file *);
+int vfs_lseek(struct file *, size_t, uint32_t whence);
 
 /*
  *    Generic ops

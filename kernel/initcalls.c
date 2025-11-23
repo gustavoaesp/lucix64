@@ -29,7 +29,7 @@ void do_initcalls()
 {
     void *call;
     call = &__initcall_start;
-    while(call < &__initcall_end) {
+    while(((initcall_t*)call) < &__initcall_end) {
         initcall_t initcall_idx = *((initcall_t*)call);
         (*initcall_idx)();
         call += sizeof(initcall_t);

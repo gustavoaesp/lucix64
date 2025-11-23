@@ -1,5 +1,6 @@
 #include <lucix/device.h>
 #include <lucix/printk.h>
+#include <pci/pci.h>
 
 #include <arch/paging.h>
 

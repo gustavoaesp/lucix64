@@ -47,6 +47,7 @@ isr_stub_\id:
 .endm
 
 .macro isr_err_stub id
+.global isr_stub_\id
 isr_stub_\id:
 	pushaq_macro
 	pushq	$\id
@@ -54,6 +55,7 @@ isr_stub_\id:
 	call	_exception_handler_stub_err
 	popq	%rax
 	popaq_macro
+	add	$0x08,	%rsp/* This little fucker made me lose sleep.*/
 	iretq
 .endm
 

@@ -9,6 +9,7 @@ static void perform_syscall(unsigned long value)
 
 void _entry()
 {
+	perform_syscall(0);
 	for (;;) {
 		for(int i = 0; i < 0xffffffff; i++) {
 			perform_syscall(i);

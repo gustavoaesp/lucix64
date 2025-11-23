@@ -2,6 +2,7 @@
 #define _LUCIX_MM_H_
 #include <lucix/list.h>
 #include <lucix/utils.h>
+#include <arch_generic/cpu.h>
 #include <stdint.h>
 
 #define	BASE_PHYS_IDENTITY	(0xffff800000000000)
@@ -41,6 +42,7 @@ struct page_cache_attr {
 struct page {
 	struct list_head list;
 	uint32_t flags;
+	uint32_t refcnt;
 	void* vaddr;
 	union {
 		struct page_cache_attr page_cache_attr;
@@ -90,9 +92,25 @@ enum page_alloc_flags {
 };
 
 struct page* get_page_from_vaddr(void*);
+struct page* get_page_from_paddr(uint64_t);
 uint64_t get_phys_addr_from_page(struct page*);
 
 struct page* alloc_pages(uint32_t flags, uint32_t order);
 void free_pages(struct page* , uint32_t order);
+
+static inline void page_ref(struct page *p)
+{
+	uint64_t cpu_irq = cpu_irq_save();
+	p->refcnt++;
+	cpu_irq_restore(cpu_irq);
+}
+
+static inline void page_unref(struct page *p)
+{
+	uint64_t cpu_irq = cpu_irq_save();
+	p->refcnt--;
+	cpu_irq_restore(cpu_irq);
+}
+
 
 #endif

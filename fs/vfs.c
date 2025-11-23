@@ -122,18 +122,22 @@ struct file *vfs_open(const char *path, uint32_t oflags, uint32_t mode)
     	file->ops->open(ino, file);
     }
 
+    file_ref(file);
+
     return file;
 }
 
 int vfs_close(struct file *file)
 {
-	if (file->ops->release) {
-		file->ops->release(file->inode, file);
+	file_unref(file);
+
+	if (!file->refcnt) {
+		if (file->ops->release) {
+			file->ops->release(file->inode, file);
+		}
+		ino_deref(file->inode);
+		mem_cache_free_obj(file_mem_cache, file);
 	}
-
-	ino_deref(file->inode);
-
-	mem_cache_free_obj(file_mem_cache, file);
 
 	return 0;
 }
@@ -159,4 +163,27 @@ int vfs_mkdir(const char *path, mode_t mode)
     ino_deref(parent_ino);
 
     return ret;
+}
+
+int vfs_lseek(struct file *file, size_t offset, uint32_t whence)
+{
+	if (file->ops && file->ops->lseek) {
+		return file->ops->lseek(file, offset, whence);
+	}
+
+	switch(whence) {
+	case SEEK_SET:
+		file->offset = offset;
+		break;
+	case SEEK_CUR:
+		file->offset += offset;
+		break;
+	case SEEK_END:
+		file->offset = file->inode->size + offset;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }

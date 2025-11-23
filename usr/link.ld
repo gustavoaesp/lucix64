@@ -13,7 +13,7 @@ PHDRS
 
 SECTIONS
 {
-	. = 0x00100000;
+	. = 0x00400000;
 
 	.text : {
 		*(.text .text.*)
@@ -43,7 +43,7 @@ SECTIONS
 }*/
 SECTIONS
 {
-  . = 0x10000;
+  . = 0x40000;
   .text : { *(.text) }
   .data : { *(.data) }
   .bss : { *(.bss) }

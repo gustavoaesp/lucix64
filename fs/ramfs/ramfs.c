@@ -1,4 +1,5 @@
 #include <arch/paging.h>
+#include <arch_generic/paging.h>
 
 #include <fs/ramfs/inode.h>
 #include <fs/ramfs/super.h>
@@ -14,6 +15,7 @@
 #include <lucix/string.h>
 #include <lucix/utils.h>
 #include <lucix/vfs.h>
+#include <lucix/vma.h>
 
 #include <lucix/printk.h>
 
@@ -36,12 +38,17 @@ static int ramfs_mapping_write_begin(struct file *file, struct file_page_mapping
 	if (pg_index >= mapping->nr_pages) {
 		mapping->nr_pages++;
 		struct page **new_array = kmalloc(sizeof(struct page*) * mapping->nr_pages, 0);
+		struct page *new_page = NULL;
 		memcpy (new_array, mapping->pages, sizeof(struct page*) * (mapping->nr_pages - 1));
-		mapping->pages[mapping->nr_pages - 1] = alloc_pages(PGALLOC_KERNEL, 0);
+		new_page = alloc_pages(PGALLOC_KERNEL, 0);
+		page_ref(new_page);
+		mapping->pages[mapping->nr_pages - 1] = new_page;
 	}
 
 	if (!mapping->pages[pg_index]) {
-		mapping->pages[pg_index] = alloc_pages(PGALLOC_KERNEL, 0);
+		struct page *new_page = alloc_pages(PGALLOC_KERNEL, 0);
+		page_ref(new_page);
+		mapping->pages[pg_index] = new_page;
 		mapping->pages[pg_index]->page_cache_attr.owner = mapping;
 		mapping->pages[pg_index]->flags = PAGE_USAGE_CACHE;
 	}
@@ -65,6 +72,50 @@ static int ramfs_mapping_write_end(struct file *file, struct file_page_mapping *
 	return 0;
 }
 
+static int ramfs_vma_fault(struct vm_area *vma, struct vm_fault *vm_fault)
+{
+	struct page *page = vma->file->inode->f_map->pages[vm_fault->pgoffset + vma->fpg_off];
+	if (!page) {
+		/* page is not present, write beyond the file */
+		return 1;
+	}
+
+	/* protection fault */
+	if (vm_fault->flags & PGFAULT_PROTECTION) {
+		if (vm_fault->flags & PGFAULT_WRITE && vma->prot & VM_MAYWRITE) {
+			if (vma->flags & VM_FLAG_PRIVATE) {
+				struct page *new_page = alloc_pages(PGALLOC_KERNEL, 0);
+				memcpy(new_page->vaddr, page->vaddr, PAGE_SIZE);
+				page_ref(new_page);
+				page_unref(page);
+				vm_fault->new_page = new_page;
+				return 0;
+			} else {
+				vm_fault->new_page = page;
+				page_ref(page);
+				return 0;
+			}
+		}
+	} else {
+		vm_fault->new_page = page;
+		page_ref(page);
+		return 0;
+	}
+
+
+	return 0;
+}
+
+struct vm_area_operations ramfs_vma_ops = {
+	.fault = ramfs_vma_fault
+};
+
+static int ramfs_file_mmap(struct file *file, struct vm_area *area)
+{
+	area->vm_ops = &ramfs_vma_ops;
+	return 0;
+};
+
 struct file_page_mapping_ops ramfs_file_mapping_ops = {
 	.readpage = ramfs_mapping_readpage,
 	.write_begin = ramfs_mapping_write_begin,
@@ -75,16 +126,18 @@ struct file_ops ramfs_file_ops = {
 	.open = NULL,
 	.read = generic_file_read,
 	.write = generic_file_write,
+	.mmap = ramfs_file_mmap,
 	.release = NULL
 };
 
 static int ramfs_ino_lookup(struct inode* dir, const char* name, uint32_t namelen, struct inode **out)
 {
-    struct ramfs_inode *ramfs_inode = dir;
-    struct ramfs_dir_entry *dir_entry;
-    list_for_each_entry(dir_entry, &ramfs_inode->dir_entries, list_entry) {
+    struct ramfs_inode *ramfs_inode = (struct ramfs_inode*)dir;
+    struct list_head *pos = NULL;
+    list_for_each(pos, &ramfs_inode->dir_entries.list) {
+	struct ramfs_dir_entry *dir_entry = list_entry(pos, struct ramfs_dir_entry, list_entry);
         if (!memcmp(dir_entry->name, name, namelen)) {
-            *out = dir_entry->i;
+            *out = (struct inode*)dir_entry->i;
             ino_ref(*out);
             return 0;
         }
@@ -113,7 +166,7 @@ static int ramfs_ino_create_generic(struct inode *dir, const char *name, mode_t 
     new_entry = kmalloc(sizeof(struct ramfs_dir_entry), 0);
     memset(new_entry, 0, sizeof(struct ramfs_dir_entry));
     strcpy(new_entry->name, name);
-    new_entry->i = new_ino;
+    new_entry->i = (struct ramfs_inode*)new_ino;
     new_ino->mode = mode;
     new_ino->id = sb->ino_counter++;
     new_ino->blocks = 0;
@@ -150,7 +203,7 @@ static int ramfs_ino_create(struct inode *dir, const char *name, mode_t mode, st
     return ret;
 }
 
-static int ramfs_ino_mkdir(struct inode *dir, const char *name, mode_t mode)
+static int ramfs_ino_mkdir(struct inode *dir, const char *name, size_t len, mode_t mode)
 {
     struct inode *res = NULL;
     int ret = ramfs_ino_create_generic(dir, name, (mode & 0x7) | S_IFDIR, &res);
@@ -164,13 +217,13 @@ static int ramfs_ino_mkdir(struct inode *dir, const char *name, mode_t mode)
 
     /* set '..' to the parent */
     entry = kmalloc(sizeof(struct ramfs_dir_entry), 0);
-    entry->i = dir;
+    entry->i = (struct ramfs_inode*)dir;
     strcpy(entry->name, "..");
     list_add(&entry->list_entry, &new_dir->dir_entries.list);
 
     /* set '.' to self */
     entry = kmalloc(sizeof(struct ramfs_dir_entry), 0);
-    entry->i = res;
+    entry->i = (struct ramfs_inode*)res;
     strcpy(entry->name, ".");
     list_add(&entry->list_entry, &new_dir->dir_entries.list);
 
@@ -205,7 +258,7 @@ static int ramfs_sb_inode_read(struct super_block *base_sb, struct inode *i)
 /*
 *   Does nothing
 */
-static int *ramfs_sb_inode_write(struct super_block *base_sb, struct inode *i)
+static int ramfs_sb_inode_write(struct super_block *base_sb, struct inode *i)
 {
     return 0;
 }
@@ -234,7 +287,7 @@ static int ramfs_sb_put(struct super_block *sb)
 static struct super_block *ramfs_alloc_sb ()
 {
     struct ramfs_super_block *sb = kmalloc(sizeof(struct ramfs_super_block), 0);
-    return sb;
+    return (struct super_block*)sb;
 }
 
 static int ramfs_dealloc_sb(struct super_block* sb)
@@ -256,7 +309,7 @@ struct super_block_ops ramfs_sb_ops = {
 
 static int ramfs_read_sb(struct super_block *sb, dev_t device)
 {
-    struct ramfs_super_block *super = sb;
+    struct ramfs_super_block *super = (struct ramfs_super_block*)sb;
     struct ramfs_inode *root_ino = NULL;
     struct ramfs_dir_entry *dir_entry = NULL;
 
@@ -317,6 +370,7 @@ static int ramfs_init()
 
 static int ramfs_unload()
 {
+	return 0;
 }
 
-initcall_fs(ramfs_init)
+initcall_fs(ramfs_init);

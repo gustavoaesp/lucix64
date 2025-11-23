@@ -9,8 +9,13 @@
 void cpu_ktask_setup(struct task *t, void (*__entry)(void*), void *args);
 
 /*
+ *  Initialize a cpu state for execve
+ * */
+void cpu_setup_process(void **cpu_state, uintptr_t entry);
+
+/*
 *   Does not return, context switches to the last state of current_task
 */
-void cpu_context_switch();
+void cpu_context_switch(void *cpu_state);
 
 #endif

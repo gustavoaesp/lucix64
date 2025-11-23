@@ -39,6 +39,11 @@ jump_to_user:
 */
 .global __iret_context_switch
 __iret_context_switch:
+
+    /*mov     $0x28,  %ax*/
+    /*ltr     %ax*/
+
+    mov     %rdi,   %rsp
     mov     %rdi,   %rax
     mov     %ax,    %ds
     mov     %ax,    %es

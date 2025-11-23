@@ -8,6 +8,7 @@
 
 #include <lucix/printk.h>
 #include <lucix/task.h>
+#include <lucix/vma.h>
 
 void cpu_ktask_setup(struct task *t, void (*__entry)(void*), void *args)
 {
@@ -24,8 +25,8 @@ void cpu_ktask_setup(struct task *t, void (*__entry)(void*), void *args)
 
     cpu->cs = _KERNEL_CS;
     cpu->ss = _KERNEL_DS;
-    cpu->rip = __entry;
-    cpu->rsp = t->kstack_top;
+    cpu->rip = (uint64_t)__entry;
+    cpu->rsp = (uint64_t)t->kstack + t->kstack_size;
     /* the args pointer for __entry */
     cpu->rdi = (uint64_t)args;
 
@@ -41,16 +42,22 @@ extern void __iret_context_switch(
     struct interrupt_frame *frame
 );
 
-void cpu_context_switch()
+void cpu_context_switch(void *new_cpu_state)
 {
     /* Here we assume that current_task is the new task (this was done by the scheduler)*/
-    struct interrupt_frame *frame =
-        (struct interrupt_frame*)
-        ((uint64_t)current_task->ksp - sizeof(struct interrupt_frame) + 8);
+    struct interrupt_frame *frame = NULL;
+    if (!new_cpu_state) {
+	    frame = (struct interrupt_frame*)((uint64_t)current_task->ksp - sizeof(struct interrupt_frame) + 8);
+    } else {
+	    frame = (struct interrupt_frame*)((uint64_t)current_task->kstack);
+    }
     struct arch_x86_cpu_state *cpu_state = current_task->cpu_state;
+    if (new_cpu_state) {
+	    cpu_state = new_cpu_state;
+    }
     uint64_t irq_state = cpu_irq_save();
 
-    g_tss.rsp[0] = current_task->kstack_top;
+    g_tss.rsp[0] = (uint64_t)current_task->kstack + (PAGE_SIZE * 2);
 
     /*
     *   setup an interrupt frame on the *new* current process kstack
@@ -76,6 +83,9 @@ void cpu_context_switch()
     frame->r13 = cpu_state->r13;
     frame->r14 = cpu_state->r14;
     frame->r15 = cpu_state->r15;
+
+    if (new_cpu_state)
+	    kfree(new_cpu_state);
 
     cpu_irq_restore(irq_state);
     __iret_context_switch(cpu_state->ss, frame);

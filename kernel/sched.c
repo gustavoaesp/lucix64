@@ -3,6 +3,7 @@
 #include <lucix/task.h>
 #include <lucix/mm.h>
 #include <lucix/printk.h>
+#include <lucix/vma.h>
 
 #include <arch/paging.h>
 
@@ -10,8 +11,9 @@
 #include <arch_generic/sched.h>
 
 static obj_mem_cache_t *task_cache = NULL;
-static obj_mem_cache_t *vm_area_cache = NULL;
 static obj_mem_cache_t *procmm_cache = NULL;
+
+obj_mem_cache_t *vm_area_cache = NULL;
 
 static uint32_t pid_count = 1;
 
@@ -28,9 +30,9 @@ void sched_init()
 	INIT_LIST_HEAD(&task_list);
 }
 
-static void copy_vma_pages(const void* from, struct vma_area_operations *to, int64_t size)
+/*static void copy_vma_pages(const void* from, struct vma_area_operations *to, int64_t size)
 {
-}
+}*/
 
 static struct task *create_task()
 {
@@ -43,11 +45,12 @@ static struct task *create_task()
 	struct page *p = alloc_pages(PGALLOC_KERNEL, 1);
 	t->kstack = p->vaddr;
 	t->kstack_size = PAGE_SIZE << 1;
-	t->kstack_top = t->kstack + t->kstack_size;
-	t->ksp = t->kstack_top;
+	/*t->kstack_top = t->kstack + t->kstack_size;*/
+	t->ksp = (uint64_t)t->kstack + t->kstack_size;
 
 	t->mm = mem_cache_alloc_obj(procmm_cache);
 	t->mm->pgtable = cpu_mm_create_page_table();
+	INIT_LIST_HEAD(&t->mm->vm_areas);
 
 	return t;
 }
@@ -151,10 +154,10 @@ void sched_irq()
 
 	/* we reached all tasks, restart from the beginning */
 	if (((uint64_t)current_task) == ((uint64_t)&task_list)) {
-		current_task = task_list.next;
+		current_task = (struct task*)task_list.next;
 	}
 
 	cpu_mm_set_pgtable(current_task->mm->pgtable);
-	cpu_context_switch();
+	cpu_context_switch(NULL);
 	/* should never reach here */
 }

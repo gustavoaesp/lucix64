@@ -297,6 +297,8 @@ struct page *alloc_pages(uint32_t flags, uint32_t order)
 		memset(p->vaddr, 0, PAGE_SIZE * (1 << order));
 	}
 
+	p->refcnt = 0;
+
 	return p;
 }
 
@@ -341,6 +343,11 @@ struct page* get_page_from_vaddr(void* vaddr)
 {
 	uint64_t paddr = VA2PA(vaddr);
 
+	return get_page_from_paddr(paddr);
+}
+
+struct page* get_page_from_paddr(uint64_t paddr)
+{
 	for (int z = 0; z < state.num_zones; ++z) {
 		struct memory_zone* zone = state.zones + z;
 		uint64_t pgindex = 0;

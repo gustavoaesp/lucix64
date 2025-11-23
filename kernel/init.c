@@ -1,6 +1,8 @@
+#include <arch/apic.h>
 #include <arch/ioremap.h>
 #include <arch/paging.h>
 #include <arch/setup.h>
+#include <lucix/pci.h>
 
 #include <lucix/console.h>
 #include <lucix/device.h>
@@ -12,6 +14,8 @@
 #include <lucix/sched.h>
 #include <lucix/slab.h>
 #include <lucix/task.h>
+
+#include <pci/pci.h>
 
 #include <arch/acpi.h>
 
@@ -72,7 +76,7 @@ void start_kernel(struct lucix_startup_data* startup_data)
 
 	vfs_init();
 
-	pci_init();
+	/*pci_init();*/
 
 	do_initcalls();
 	//load_elf(startup_data->ramdisk->addr, startup_data->ramdisk->size);

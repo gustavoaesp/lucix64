@@ -1,6 +1,7 @@
 #include <arch/paging.h>
 #include <lucix/mm.h>
 #include <lucix/vm.h>
+#include <lucix/vma.h>
 #include <lucix/task.h>
 
 uint64_t g_kernel_phys_base = 0;
@@ -149,10 +150,50 @@ void *cpu_mm_create_page_table()
 
 void cpu_mm_map_page(void *pgtable, uint64_t phys_addr, uint64_t vaddr, uint32_t vm_flags)
 {
-	map_contiguous(pgtable, phys_addr, vaddr, PAGE_SIZE, 0, vm_flags);
+	map_contiguous(pgtable, phys_addr, (void*)vaddr, PAGE_SIZE, 0, vm_flags);
 }
 
 void cpu_mm_set_pgtable(void *pgtable)
 {
 	set_cr3(VA2PA((uint64_t)pgtable));
+}
+
+uint64_t cpu_mm_get_phys_address(struct procmm *procmm, uintptr_t vaddr)
+{
+	uint64_t phys_addr = 0;
+	uint64_t *pg_table = procmm->pgtable;
+	uint64_t entry = 0;
+
+	/* Get PDPT table from PML4 */
+	entry = pg_table[PML4_FROM_VA(vaddr)];
+	if (!(entry & PML4_PRESENT_FLAG)) return 0xfff;
+	pg_table = (uint64_t*)(
+		PA2VA(
+			PAGE_FRAME(entry)
+		)
+	);
+	/* Get PDET table from PDPT */
+	entry = pg_table[PDPT_FROM_VA(vaddr)];
+	if (!(entry & PDPT_PRESENT_FLAG)) return 0xfff;
+	pg_table = (uint64_t*)(
+		PA2VA(
+			PAGE_FRAME(entry)
+		)
+	);
+	/* Get PTE table from PDET */
+	entry = pg_table[PDET_FROM_VA(vaddr)];
+	if (!(entry & PDET_PRESENT_FLAG)) return 0xfff;
+	/* 2 mb mapping */
+	if ((entry & PDET_PAGE_SIZE)) return PAGE_FRAME(entry);
+	pg_table = (uint64_t*)(
+		PA2VA(
+			PAGE_FRAME(entry)
+	     	)
+	);
+
+	/* Get the entry from PTE */
+	entry = pg_table[PTE_FROM_VA(vaddr)];
+	if (!(entry & PTE_PRESENT_FLAG)) return 0xfff;
+
+	return PAGE_FRAME(entry);
 }

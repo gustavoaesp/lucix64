@@ -4,7 +4,7 @@ sudo losetup -Pf disk.hdd
 sudo mount /dev/loop0p2 /mnt/lucix
 sudo mount /dev/loop0p1 /mnt/lucix/boot/efi
 sudo cp -v lucix /mnt/lucix/boot/efi/
-sudo cp -v usr/testbin /mnt/lucix/boot/efi/
+sudo cp -v initramfs.tar /mnt/lucix/boot/efi/
 
 sudo umount -R /mnt/lucix
 sudo losetup --detach-all

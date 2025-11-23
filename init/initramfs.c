@@ -5,6 +5,7 @@
 #include <lucix/printk.h>
 #include <lucix/vfs.h>
 #include <lucix/slab.h>
+#include <lucix/strtol.h>
 
 #include <uapi/lucix/fcntl.h>
 
@@ -103,7 +104,7 @@ static int process_directory(struct tar_header *header)
 static int process_file(struct tar_header *header)
 {
     void *ptr = header;
-    size_t size = strtol(header->size, header->size + 12, 8);
+    size_t size = strtol(header->size, NULL, 8);
 
     ptr += 512;
     int ret = 0;
