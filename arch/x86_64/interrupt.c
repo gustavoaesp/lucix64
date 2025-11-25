@@ -38,8 +38,6 @@ static void set_descriptor(struct interrupt_descriptor* descriptor, void* functi
 	descriptor->ist = 0;
 }
 
-extern void jump_to_user(struct interrupt_frame *);
-
 void setup_interrupts()
 {
 	_idtr.base = (uint64_t)idt;

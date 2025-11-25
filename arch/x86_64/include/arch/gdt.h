@@ -40,12 +40,12 @@ struct long_gdt_entry {
     (struct long_gdt_entry)                 \
     {                                       \
         .rsvd_ = 0,                         \
-        .base_0 = ((base >> 32) & 0xffffffff),      \
-        .base_1 = ((base >> 24) & 0xff),    \
+        .base_0 = ((base >> 32ULL) & 0xffffffff),      \
+        .base_1 = ((base >> 24ULL) & 0xff),    \
         .flags = 2,                         \
-        .limit_0 = ((limit >> 16) & 0xf),  \
+        .limit_0 = ((limit >> 16ULL) & 0xf),  \
         .access = 0x89,                      \
-        .base_3 = ((base >> 16) & 0xff),    \
+        .base_3 = ((base >> 16ULL) & 0xff),    \
         .base_4 = ((base) & 0xffff),  \
         .limit_1 = ((limit) & 0xffff)  \
     }
