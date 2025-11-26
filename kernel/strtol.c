@@ -13,31 +13,31 @@
 
 long strtol(const char *str, const char **endp, unsigned int base)
 {
-    long ret = 0;
+	long ret = 0;
 
-    /* Decide on our base if we're given 0 */
-    if (!base) {
-        base = 10;
-        if (str[0] == '0') {
-            base = 8;
-            str++;
-            if (str[0] == 'x') {
-                str++;
-                base = 16;
-            }
-        }
-    }
+	/* Decide on our base if we're given 0 */
+	if (!base) {
+		base = 10;
+		if (str[0] == '0') {
+			base = 8;
+			str++;
+			if (str[0] == 'x') {
+				str++;
+				base = 16;
+			}
+		}
+	}
 
-    for (; hexdigit(str[0]); str++) {
-        long val = digitval(str[0]);
-        if (val >= base)
-            break;
+	for (; hexdigit(str[0]); str++) {
+		long val = digitval(str[0]);
+		if (val >= base)
+			break;
 
-        ret = ret * base + val;
-    }
+		ret = ret * base + val;
+	}
 
-    if (endp)
-        *endp = str;
+	if (endp)
+	*endp = str;
 
-    return ret;
+	return ret;
 }

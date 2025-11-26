@@ -47,6 +47,7 @@ int vfs_mount(const char *mount_point, const char *fs_type, dev_t device, uint32
 *	Open a file
 */
 struct file *vfs_open(const char*, uint32_t oflags, uint32_t mode);
+
 /*
 *	Create a file
 */

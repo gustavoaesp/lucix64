@@ -3,8 +3,8 @@
 #include <lucix/start.h>
 
 struct initramfs {
-    void *addr;
-    int64_t size;
+	void *addr;
+	int64_t size;
 };
 
 extern struct initramfs initramfs_info;

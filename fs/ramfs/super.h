@@ -5,10 +5,10 @@
 #include <lucix/fs/inode.h>
 
 struct ramfs_super_block {
-    struct super_block sb;
+	struct super_block sb;
 
-    struct inode* root;
-    uint32_t ino_counter;
+	struct inode* root;
+	uint32_t ino_counter;
 };
 
 #endif

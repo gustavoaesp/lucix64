@@ -3,19 +3,19 @@
 ./scripts/copy_kernel
 
 sudo qemu-system-x86_64 \
-	-enable-kvm \
-    -machine q35 \
+	-machine q35 \
 	-m 8192	\
-    -s -S \
+	-s -S \
 	-no-reboot \
 	-drive format=raw,file=disk.hdd,if=none,id=nvm \
-    -device nvme,serial=deadbeef,drive=nvm \
+	-device nvme,serial=deadbeef,drive=nvm \
 	-monitor stdio \
 	-smp 1 \
 	-usb \
 	-vga std \
-    -d int \
+	-accel tcg,thread=single \
+	-d int \
 	-bios ../ovmf-blobs/RELEASEX64_OVMF.fd
 
-    #-drive format=raw,file=/home/potter/Downloads/archlinux-2022.11.01-x86_64.iso
-    #-accel tcg,thread=single\
+	#-drive format=raw,file=/home/potter/Downloads/archlinux-2022.11.01-x86_64.iso
+	#-enable-kvm
