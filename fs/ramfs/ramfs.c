@@ -23,12 +23,14 @@ static obj_mem_cache_t* ramfs_inode_cache = NULL;
 
 extern struct inode_ops ramfs_ino_ops;
 
-static int ramfs_mapping_readpage(struct file *file, struct file_page_mapping *mapping, struct page *page, int64_t offs)
+static int ramfs_mapping_readpage(struct file *file, struct file_page_mapping *mapping,
+					struct page *page, int64_t offs)
 {
 	return 0;
 }
 
-static int ramfs_mapping_write_begin(struct file *file, struct file_page_mapping *mapping, size_t pos, size_t len,
+static int ramfs_mapping_write_begin(struct file *file, struct file_page_mapping *mapping,
+					size_t pos, size_t len,
 					struct page **dst_page, void *fs_data)
 {
 	struct inode *ino = file->inode;
@@ -56,7 +58,8 @@ static int ramfs_mapping_write_begin(struct file *file, struct file_page_mapping
 	return 0;
 }
 
-static int ramfs_mapping_write_end(struct file *file, struct file_page_mapping *mapping, size_t pos, size_t len,
+static int ramfs_mapping_write_end(struct file *file, struct file_page_mapping *mapping,
+					size_t pos, size_t len,
 					size_t copied, struct page *page, void *fs_data)
 {
 	struct inode *ino = file->inode;
@@ -129,7 +132,8 @@ struct file_ops ramfs_file_ops = {
 	.release = NULL
 };
 
-static int ramfs_ino_lookup(struct inode* dir, const char* name, uint32_t namelen, struct inode **out)
+static int ramfs_ino_lookup(struct inode* dir, const char* name,
+				uint32_t namelen, struct inode **out)
 {
     struct ramfs_inode *ramfs_inode = (struct ramfs_inode*)dir;
     struct list_head *pos = NULL;
@@ -145,7 +149,8 @@ static int ramfs_ino_lookup(struct inode* dir, const char* name, uint32_t namele
     return -ENOENT; /* TODO fill all errnos*/
 }
 
-static int ramfs_ino_create_generic(struct inode *dir, const char *name, mode_t mode, struct inode **res)
+static int ramfs_ino_create_generic(struct inode *dir, const char *name,
+					mode_t mode, struct inode **res)
 {
 	struct inode *new_ino = NULL;
 	struct ramfs_super_block *sb = (struct ramfs_super_block*)dir->sb;
@@ -195,9 +200,10 @@ static int ramfs_ino_create_generic(struct inode *dir, const char *name, mode_t 
 	return 0;
 }
 
-static int ramfs_ino_create(struct inode *dir, const char *name, mode_t mode, struct inode **res)
+static int ramfs_ino_create(struct inode *dir, const char *name,
+				mode_t mode, struct inode **res)
 {
-	int ret = ramfs_ino_create_generic(dir, name, (mode & 0x7) | S_IFREG, res);
+	int ret = ramfs_ino_create_generic(dir, name, (mode & 0xfff) | S_IFREG, res);
 	ino_ref(*res);
 	return ret;
 }
@@ -205,7 +211,7 @@ static int ramfs_ino_create(struct inode *dir, const char *name, mode_t mode, st
 static int ramfs_ino_mkdir(struct inode *dir, const char *name, size_t len, mode_t mode)
 {
 	struct inode *res = NULL;
-	int ret = ramfs_ino_create_generic(dir, name, (mode & 0x7) | S_IFDIR, &res);
+	int ret = ramfs_ino_create_generic(dir, name, (mode & 0xfff) | S_IFDIR, &res);
 	struct ramfs_inode *new_dir = NULL;
 	struct ramfs_dir_entry *entry = NULL;
 	if (ret) {
@@ -225,6 +231,23 @@ static int ramfs_ino_mkdir(struct inode *dir, const char *name, size_t len, mode
 	entry->i = (struct ramfs_inode*)res;
 	strcpy(entry->name, ".");
 	list_add(&entry->list_entry, &new_dir->dir_entries.list);
+
+	return ret;
+}
+
+static int ramfs_ino_mknod(struct inode *dir, const char *name, size_t len,
+				mode_t mode, dev_t device)
+{
+	int ret = 0;
+	struct inode *res = NULL;
+
+	if (!((mode & 0xf000) == S_IFBLK || (mode &0xf000) == S_IFCHR)) {
+		return EINVAL;
+	}
+
+	/* Remember that mode is expected from the caller, that's why we check
+	 * for blk or chr before calling this */
+	ret = ramfs_ino_create_generic(dir, name, mode, &res);
 
 	return ret;
 }

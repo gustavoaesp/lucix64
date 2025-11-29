@@ -19,7 +19,6 @@ struct init_module
 struct lucix_startup_data
 {
 	struct cpu_memory_info* mem_info;
-	struct framebuffer_data* framebuffer;
 	struct init_module* ramdisk;
 };
 

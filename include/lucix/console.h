@@ -2,17 +2,24 @@
 #define _CONSOLE_H_
 #include <stdint.h>
 
-#include <lucix/start.h>
+#include <lucix/list.h>
+
+#define CONSOLE_SERIAL	0x01
+#define CONSOLE_COLOR	0x02
 
 struct console {
-	void (*write)(const char*, uint32_t);
+	struct list_head list;
+	const char *name;
+	void (*putchar)(struct console *, char);
 	uint32_t flags;
+
+	/* private data the console might need */
+	void *private;
 };
 
-void console_init(struct framebuffer_data *framebuffer);
+void register_console(struct console *);
+void unregister_console(struct console *);
 
 extern void console_putchar(char c);
-
-void console_print(const char* str);
 
 #endif

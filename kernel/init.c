@@ -28,31 +28,6 @@ static void hcf(void)
 	}
 }
 
-/*static void kernel_init_task(void *__unused)
-{
-	printf("kernel_init_task\n");
-	for (int i = 0; i < 16; ++i) {
-		for(uint32_t counter = 0; counter <= 0xfffffff; counter++) {}
-		printf("kit: %d\n", i);
-	}
-	for(;;) {
-		asm volatile ("hlt");
-	}
-}
-
-static void concurrent_task_test(void *__unused)
-{
-	printf("concurrent_task_test\n");
-
-	for (int i = 0; i < 16; ++i) {
-		for (uint32_t counter = 0; counter <= 0x7ffffff; counter++) {}
-		printf("ctt: %d\n", i);
-	}
-	for(;;) {
-		asm volatile ("hlt");
-	}
-}*/
-
 void start_kernel(struct lucix_startup_data* startup_data)
 {
 	mem_init(startup_data->mem_info);
@@ -61,7 +36,7 @@ void start_kernel(struct lucix_startup_data* startup_data)
 
 	setup_arch();
 
-	console_init(startup_data->framebuffer);
+	/*console_init(startup_data->framebuffer);*/
 	if(acpi_init()) {
 		printf("ACPI NOT FOUND\n");
 	}
@@ -79,12 +54,9 @@ void start_kernel(struct lucix_startup_data* startup_data)
 	/*pci_init();*/
 
 	do_initcalls();
-	//load_elf(startup_data->ramdisk->addr, startup_data->ramdisk->size);
+
 	sched_init();
 
-	/*task_exec(t, initramfs_info.addr, initramfs_info.size);*/
-	/*sched_mk_kernel_task(kernel_init_task, NULL);
-	sched_mk_kernel_task(concurrent_task_test, NULL);*/
 	sched_mk_kernel_task(kinit_task, NULL);
 
 	/*	Given that at this point there is no active task in the scheduler, this will force setting

@@ -17,18 +17,18 @@
 };*/
 
 struct vfs_mount {
-    struct list_head list;
-    struct super_block *super_block;
-    /*
-    *   This points to the inode it mounted on in a parent filesystem
-    *   If this mount is the root mount it will point to the root ino
-    *   itself. It will refcount the inode.
-    */
-    struct inode *mnt_ino;
+	struct list_head list;
+	struct super_block *super_block;
+	/*
+	*   This points to the inode it mounted on in a parent filesystem
+	*   If this mount is the root mount it will point to the root ino
+	*   itself. It will refcount the inode.
+	*/
+	struct inode *mnt_ino;
 	/*
 	*	Root inode of this mount. It is refcounted
 	*/
-    struct inode *root_ino;
+	struct inode *root_ino;
 };
 
 extern struct vfs_mount *mnt_root;
@@ -53,6 +53,7 @@ struct file *vfs_open(const char*, uint32_t oflags, uint32_t mode);
 */
 int vfs_create(const char*, mode_t);
 int vfs_mkdir(const char*, mode_t);
+int vfs_mknod(const char*, mode_t, dev_t);
 int vfs_read(struct file *, void __user *, int64_t count);
 int vfs_write(struct file *, const void __user *, int64_t count);
 int vfs_close(struct file *);

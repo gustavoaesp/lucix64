@@ -6,6 +6,7 @@
 #include <arch/early_paging.h>
 #include <arch/init_mem.h>
 #include <arch/paging.h>
+#include <arch/framebuffer.h>
 
 #include <lucix/limine.h>
 #include <lucix/mm.h>
@@ -39,8 +40,9 @@ static volatile struct limine_module_request module_request = {
 
 static struct cpu_memory_info* cpu_info;
 static struct lucix_startup_data setup;
-static struct framebuffer_data fb_data;
 static struct init_module module;
+
+struct framebuffer_data efi_fb_data;
 
 void _start(void)
 {
@@ -50,10 +52,10 @@ void _start(void)
 
 	cpu_info = initialize_memory(memmap_request.response);
 
-	fb_data.width = framebuffer->width;
-	fb_data.height = framebuffer->height;
-	fb_data.pitch = framebuffer->pitch;
-	fb_data.phys_addr = VA2PA(framebuffer->address);
+	efi_fb_data.width = framebuffer->width;
+	efi_fb_data.height = framebuffer->height;
+	efi_fb_data.pitch = framebuffer->pitch;
+	efi_fb_data.phys_addr = VA2PA(framebuffer->address);
 
 	if (module_request.response->module_count) {
 		struct limine_file* file = module_request.response->modules[0];
@@ -62,7 +64,6 @@ void _start(void)
 	}
 
 	setup.mem_info = cpu_info;
-	setup.framebuffer = &fb_data;
 	setup.ramdisk = &module;
 
 	g_kernel_phys_base = kernel_address_request.response->physical_base;

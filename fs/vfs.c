@@ -2,6 +2,7 @@
 #include <fs/namecache.h>
 #include <fs/lookup.h>
 
+#include <lucix/cdev.h>
 #include <lucix/printk.h>
 #include <lucix/errno.h>
 #include <lucix/slab.h>
@@ -97,6 +98,8 @@ struct file *vfs_open(const char *path, uint32_t oflags, uint32_t mode)
 {
 	struct file *file = NULL;
 	struct inode *ino = NULL;
+	struct file_ops *fops = NULL;
+
 	int ret = 0;
 
 	ret = vfs_lookup(path, 0, &ino);
@@ -112,14 +115,36 @@ struct file *vfs_open(const char *path, uint32_t oflags, uint32_t mode)
 		}
 	}
 
+	switch(INO_TYPE(ino))
+	{
+	case S_IFCHR:
+	{
+		struct char_device_driver *cdevdriver = get_driver(GET_MAJOR(ino->dev));
+		if (!cdevdriver) {
+			return NULL;
+		}
+		cdrv_ref(cdevdriver);
+		fops = cdevdriver->fops;
+	}
+		break;
+	case S_IFBLK:
+		/* TODO implement a block layer first */
+		return NULL;
+		break;
+	case S_IFREG:
+	case S_IFDIR:
+		fops = ino->default_fops;
+		break;
+	}
+
 	file = mem_cache_alloc_obj(file_mem_cache);
 	file->inode = ino;
 	ino_ref(ino);
 	file->flags = oflags;
 	file->offset = 0;
-	file->ops = ino->default_fops;
+	file->ops = fops;
 	if (file->ops->open) {
-	file->ops->open(ino, file);
+		file->ops->open(ino, file);
 	}
 
 	file_ref(file);
@@ -159,6 +184,34 @@ int vfs_mkdir(const char *path, mode_t mode)
 	}
 
 	ret = parent_ino->ops->mkdir(parent_ino, directory_name, strlen(directory_name), mode);
+
+	ino_deref(parent_ino);
+
+	return ret;
+}
+
+int vfs_mknod(const char *path, mode_t mode, dev_t device)
+{
+	struct inode *parent_ino;
+	char *file_name = NULL;
+	int ret = 0;
+
+	ret = vfs_lookup(path, LOOKUP_PARENT, &parent_ino);
+
+	if (ret) {
+		return ret;
+	}
+
+	file_name = strrchr(path, '/');
+	if(file_name) file_name++;
+
+	ret = parent_ino->ops->mknod(
+		parent_ino,
+		file_name,
+		strlen(file_name),
+		mode,
+		device
+	);
 
 	ino_deref(parent_ino);
 
