@@ -248,12 +248,14 @@ static int ramfs_ino_mknod(struct inode *dir, const char *name, size_t len,
 	/* Remember that mode is expected from the caller, that's why we check
 	 * for blk or chr before calling this */
 	ret = ramfs_ino_create_generic(dir, name, mode, &res);
+	res->dev = device;
 
 	return ret;
 }
 
 struct inode_ops ramfs_ino_ops = {
 	.mkdir = ramfs_ino_mkdir,
+	.mknod = ramfs_ino_mknod,
 	.lookup = ramfs_ino_lookup,
 	.create = ramfs_ino_create,
 };

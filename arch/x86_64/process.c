@@ -22,6 +22,7 @@ void cpu_setup_process(void **cpu_state, uintptr_t entry)
 		USER_STACK_SIZE,
 		VM_READ | VM_WRITE | VM_USER,
 		VM_FLAG_ANON,
+		VMA_STACK,
 		0
 	);
 

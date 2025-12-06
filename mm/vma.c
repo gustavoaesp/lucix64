@@ -2,6 +2,23 @@
 #include <lucix/task.h>
 #include <lucix/fs/file.h>
 
+struct vm_area* find_vma_for_address(uintptr_t addr, struct procmm *mm)
+{
+	struct list_head* pos = NULL;
+	if (list_empty(&mm->vm_areas)) {
+		return NULL;
+	}
+
+	list_for_each(pos, &mm->vm_areas) {
+		struct vm_area *vma = (struct vm_area*)pos;
+		if (addr >= vma->start && addr < vma->end) {
+			return vma;
+		}
+	}
+
+	return NULL;
+}
+
 int try_join(struct procmm *procmm)
 {
 	struct list_head *pos = NULL;

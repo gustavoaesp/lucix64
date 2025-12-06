@@ -7,29 +7,6 @@
 #include <lucix/vma.h>
 #include <lucix/printk.h>
 
-/*
- *	Find the VMA that contains the faulting address
- *	if the faulting address does not belong to a VMA
- *	return NULL (invalid access -> segfault)
- *
- * */
-static struct vm_area* find_vma_for_address(uintptr_t addr, struct procmm *mm)
-{
-	struct list_head* pos = NULL;
-	if (list_empty(&mm->vm_areas)) {
-		return NULL;
-	}
-
-	list_for_each(pos, &mm->vm_areas) {
-		struct vm_area *vma = (struct vm_area*)pos;
-		if (addr >= vma->start && addr < vma->end) {
-			return vma;
-		}
-	}
-
-	return NULL;
-}
-
 static int anonymous_page_handler(struct vm_fault *vm_fault)
 {
 	struct page *new_page = NULL;

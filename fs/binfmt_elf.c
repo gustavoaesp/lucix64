@@ -156,6 +156,7 @@ static int elf_load_segments(struct file *file, struct elf_header_64 *header)
 			entry->size_in_file,
 			vm_prot_flags,
 			VM_FLAG_PRIVATE,
+			VMA_FILE,
 			entry->offset_data / PAGE_SIZE
 	       );
 	}
@@ -165,9 +166,12 @@ static int elf_load_segments(struct file *file, struct elf_header_64 *header)
 	return 0;
 }
 
-static int elf_load_binary(struct file *file, const char *filename, const char **argv, const char **envp, void**cpu_state)
+static int elf_load_binary(struct file *file, const char *filename, const char **argv,
+			const char **envp, void**cpu_state)
 {
-	struct elf_header_64 *header = (struct elf_header_64*) kmalloc(sizeof(struct elf_header_64), 0);
+	struct elf_header_64 *header =(struct elf_header_64*) kmalloc(
+		sizeof(struct elf_header_64), 0
+	);
 	int ret = 0;
 	file->ops->read(file, header, sizeof(struct elf_header_64), &file->offset);
 	if (!is_valid_elf(header)) {

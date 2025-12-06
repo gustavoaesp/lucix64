@@ -1,18 +1,11 @@
+#include <stddef.h>
+#include "syscall.h"
 
-static void perform_syscall(unsigned long value)
-{
-	asm volatile ("movq	%rdi, %rax");
-	asm volatile ("int $0x80");
-
-	for (int i = 0; i < 0xffffffff; ++i) {}
-}
+static char *str = "Hello from userspace!!\n";
 
 void _entry()
 {
-	perform_syscall(0);
-	for (;;) {
-		for(int i = 0; i < 0xffffffff; i++) {
-			perform_syscall(i);
-		}
-	}
+	write(1, str, 24);
+
+	for(;;){}
 }

@@ -9,6 +9,7 @@
 #include <lucix/task.h>
 #include <lucix/sched.h>
 #include <lucix/page_fault.h>
+#include <lucix/syscall.h>
 
 #define MAX_IDT_DESCRIPTORS	(256)
 
@@ -149,7 +150,17 @@ void __irq_handler_stub(struct interrupt_frame* frame)
 	}
 
 	if (frame->interrupt_id == 0x80) {
-		printf("int 0x80 received:)\n");
-		printf("* rax: %d\n", frame->rax);
+		int64_t syscall_n = frame->rax;
+		if (syscall_n >= SYSCALLS_NR) {
+			return;
+		}
+		frame->rax = syscall_table[syscall_n](
+			frame->rdi,
+			frame->rsi,
+			frame->rdx,
+			frame->r10,
+			frame->r8,
+			frame->r9
+		);
 	}
 }

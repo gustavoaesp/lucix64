@@ -6,6 +6,7 @@
 #include <lucix/slab.h>
 #include <lucix/start.h>
 #include <lucix/utils.h>
+#include <lucix/cdev.h>
 
 #include <stddef.h>
 

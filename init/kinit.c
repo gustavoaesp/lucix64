@@ -3,6 +3,7 @@
 #include <lucix/utils.h>
 #include <lucix/string.h>
 #include <lucix/task.h>
+#include <lucix/cdev.h>
 #include <lucix/init/initramfs.h>
 #include <arch_generic/paging.h>
 
@@ -11,6 +12,7 @@
 
 #include <lucix/fs/inode.h>
 #include <lucix/fs/exec.h>
+#include <uapi/lucix/fcntl.h>
 #include <fs/ramfs/inode.h>
 
 static int DEBUG_print_contents(struct ramfs_inode *ino, int level) {
@@ -32,21 +34,24 @@ static int DEBUG_print_contents(struct ramfs_inode *ino, int level) {
 void kinit_task(void *__unused)
 {
     struct list_head* pos;
+    struct file *fstdout = NULL;
     int ret = 0;
     printf("kinit_task\n");
     vfs_root("ramfs", 0, 0);
 
     unpack_initramfs();
 
-    /*DEBUG_print_contents(mnt_root->root_ino, 0);*/
+    /*
+     *	For now we create the device for the console in /dev
+     * */
+    vfs_mknod("/dev/console", S_IFCHR | 0666, MKDEV(5, 1));
+    fstdout = vfs_open("/dev/console", O_WRONLY, 0666);
+
+    current_task->fd_table->fd[1] = fstdout;
 
     do_execve("/bin/init", NULL, NULL);
 
-
-	printf("Trying to read from 0x40000\n");
-	uint32_t *ptr = (uint32_t*)0x40000;
-	printf("Contents: %x\n", *ptr);
-
+    /* Should not reach here (exec will jmp into userspace's entry point */
     while(1) {
         asm volatile ("hlt");
     }

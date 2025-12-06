@@ -33,7 +33,10 @@ static int get_last_slash(const char *path)
 
 void vfs_init()
 {
-	file_mem_cache = create_obj_mem_cache(sizeof(struct file), 0, 0, "vfs-file-struct");
+	file_mem_cache = create_obj_mem_cache(
+		sizeof(struct file), 0, 0,
+		"vfs-file-struct"
+	);
 	ino_cache_init();
 	fs_name_cache_init();
 }

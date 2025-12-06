@@ -69,6 +69,7 @@ uintptr_t do_mmap(
 	uint64_t length,
 	uint32_t prot,
 	uint32_t flags,
+	uint32_t type,
 	uint32_t pgoff)
 {
 	struct vm_area *vm_area = NULL;
@@ -91,6 +92,7 @@ uintptr_t do_mmap(
 	vm_area->flags = flags;
 	vm_area->length = length;
 	vm_area->file = file;
+	vm_area->type = type;
 
 	if (vm_area->prot & VM_WRITE) {
 		if (vm_area->flags & VM_FLAG_PRIVATE) {
@@ -102,8 +104,11 @@ uintptr_t do_mmap(
 	/* only used when the vm_area is a file mmap */
 	vm_area->fpg_off = pgoff;
 
-	if (file && file->ops && file->ops->mmap) {
-		file->ops->mmap(file, vm_area);
+	if (file) {
+		file_ref(file);
+		if (file->ops && file->ops->mmap) {
+			file->ops->mmap(file, vm_area);
+		}
 	}
 
 	insert_vma(procmm, vm_area);

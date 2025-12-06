@@ -3,3 +3,4 @@
 __get_cr2:
     mov %cr2, %rax
     ret
+
