@@ -108,6 +108,7 @@ static void __efi_fb_newline(struct efi_fb_console_private *con)
 			con->cols
 		);
 	}
+	memset(con->buffer + (con->rows - 1), 0, con->cols);
 
 	__efi_fb_redraw(con);
 	con->cursor_y--;

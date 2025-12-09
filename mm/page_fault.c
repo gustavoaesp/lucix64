@@ -16,7 +16,10 @@ static int anonymous_page_handler(struct vm_fault *vm_fault)
 	if (vm_fault->flags & PGFAULT_PROTECTION) {
 		/* fault was caused by a write even though we have write allowed */
 		if (vm_fault->flags & PGFAULT_WRITE) {
-			uint64_t page_phys = cpu_mm_get_phys_address(vm_fault->vma->procmm, vm_fault->addr);
+			uint64_t page_phys = cpu_mm_get_phys_address(
+				vm_fault->vma->procmm,
+				vm_fault->addr
+			);
 			struct page *page = NULL;
 			/* Tried to write to a RO page */
 			if (!(vm_fault->vma->prot & VM_MAYWRITE) && !(vm_fault->vma->prot & VM_WRITE)) {
