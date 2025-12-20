@@ -44,3 +44,29 @@ __iret_context_switch:
 	popq	%rcx
 	popq	%rax
 	iretq
+
+.global cpu_switch_to
+cpu_switch_to:
+	/*
+	 *	rdi: prev
+	 *	rsi: next
+	 **/
+	pushq	%rbp
+	pushq	%rbx
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
+
+	/* save old stack */
+	movq	%rsp,		0x40(%rdi)
+	movq	0x40(%rsi),	%rsp
+
+	popq	%r15
+	popq	%r14
+	popq	%r13
+	popq	%r12
+	popq	%rbx
+	popq	%rbp
+
+	ret

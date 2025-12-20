@@ -1,3 +1,4 @@
+#include <lucix/cpu.h>
 #include <lucix/syscall.h>
 #include <lucix/task.h>
 #include <lucix/user.h>
@@ -11,6 +12,7 @@ int64_t sys_open (int64_t path, int64_t flags, int64_t mode,
 	char pathk[256];
 	struct file *fp = NULL;
 	int fd = 0;
+	struct cpu *cpu = cpu_get_cpu();
 
 	strncpy_from_user(pathk, path_str, 256);
 
@@ -21,8 +23,8 @@ int64_t sys_open (int64_t path, int64_t flags, int64_t mode,
 		return -1;
 	}
 
-	fd = task_fd_table_get_free_fd_slot(current_task->fd_table);
-	current_task->fd_table->fd[fd] = fp;
+	fd = task_fd_table_get_free_fd_slot(cpu->current->task->fd_table);
+	cpu->current->task->fd_table->fd[fd] = fp;
 
 	return ret;
 }

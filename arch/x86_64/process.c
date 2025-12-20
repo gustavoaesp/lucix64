@@ -5,6 +5,7 @@
 #include <arch/cpu_state.h>
 #include <arch_generic/cpu.h>
 
+#include <lucix/cpu.h>
 #include <lucix/vma.h>
 #include <lucix/mmap.h>
 
@@ -13,6 +14,14 @@
 
 void cpu_setup_process(void **cpu_state, uintptr_t entry)
 {
+	struct cpu *cpu = cpu_get_cpu();
+	struct task *current_task = NULL; 
+	if (cpu->current) {
+		current_task = cpu->current->task;
+	} else {
+		/* fail miserably */
+		return;
+	}
 	/* Stack */
 	struct arch_x86_cpu_state *new_cpu_state = kmalloc(sizeof(struct arch_x86_cpu_state), 0);
 

@@ -1,6 +1,7 @@
 #include <arch/paging.h>
 #include <arch_generic/paging.h>
 
+#include <lucix/cpu.h>
 #include <lucix/mm.h>
 #include <lucix/page_fault.h>
 #include <lucix/task.h>
@@ -75,6 +76,16 @@ int kernel_page_fault(uintptr_t addr, uint32_t flags, uintptr_t pc)
 		.addr = addr,
 		.flags = flags,
 	};
+	struct cpu *cpu = cpu_get_cpu();
+	struct task *current_task = NULL;
+	if (cpu->current) {
+		current_task = cpu->current->task;
+	} else {
+		/* fail miserably */
+		printf("WHAT THE FUCK\n");
+		for(;;) asm volatile ("hlt");
+		return -1;
+	}
 
 	vma = find_vma_for_address(addr, current_task->mm);
 

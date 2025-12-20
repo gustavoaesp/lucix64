@@ -30,4 +30,8 @@ struct arch_x86_cpu_state
 	uint64_t	r15;
 };
 
+/*struct arch_x86_percpu_private
+{
+};*/
+
 #endif

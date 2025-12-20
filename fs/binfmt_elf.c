@@ -3,6 +3,7 @@
 
 #include <lucix/binfmt.h>
 #include <lucix/compiler.h>
+#include <lucix/cpu.h>
 #include <lucix/errno.h>
 #include <lucix/vfs.h>
 #include <lucix/fs/file.h>
@@ -131,6 +132,7 @@ static int is_valid_elf(void *elf)
 
 static int elf_load_segments(struct file *file, struct elf_header_64 *header)
 {
+	struct cpu *cpu = cpu_get_cpu();
 	struct elf_header_entry_64 *entries = kmalloc(sizeof(struct elf_header_entry_64) * header->num_program_header_entries, 0);
 	vfs_lseek(file, header->program_header_table_pos, SEEK_SET);
 	file->ops->read(file, entries, sizeof(struct elf_header_entry_64) * header->num_program_header_entries, &file->offset);
@@ -150,7 +152,7 @@ static int elf_load_segments(struct file *file, struct elf_header_64 *header)
 		vm_prot_flags |= VM_USER;
 
 		do_mmap(
-			current_task->mm,
+			cpu->current->task->mm,
 			file,
 			PAGE_FRAME(entry->p_vaddr),
 			entry->size_in_file,

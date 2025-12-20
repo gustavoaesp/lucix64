@@ -26,7 +26,6 @@ int do_execve(const char *path, const char **argv, const char **envp)
 		void *new_cpu_state = NULL;
 		uint64_t irq_state = cpu_irq_save();
 		if (fmt->load_binary(file, path, NULL, NULL, &new_cpu_state) == 0) {
-			/*printf("cpu_state: %p\n", new_cpu_state);*/
 			cpu_irq_restore(irq_state);
 			cpu_context_switch(new_cpu_state);
 			return 0;

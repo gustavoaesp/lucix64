@@ -1,3 +1,4 @@
+#include <lucix/cpu.h>
 #include <lucix/user.h>
 #include <lucix/sched.h>
 #include <lucix/task.h>
@@ -6,7 +7,8 @@
 int64_t copy_from_user(void *dst, const void *usr, size_t count)
 {
 	int64_t total = 0;
-	struct procmm *mm = current_task->mm;
+	struct cpu *cpu = cpu_get_cpu();
+	struct procmm *mm = cpu->current->task->mm;
 	uint8_t *dst_u8 = dst;
 	const uint8_t *usr_u8 = usr;
 
@@ -28,9 +30,10 @@ int64_t copy_from_user(void *dst, const void *usr, size_t count)
 
 int64_t strncpy_from_user(char *dst, const char *usr, size_t n)
 {
+	struct cpu *cpu = cpu_get_cpu();
 	int64_t total = 0;
 
-	struct procmm *mm = current_task->mm;
+	struct procmm *mm = cpu->current->task->mm;
 
 	while (total <= n) {
 		/* Soo inefficient I feel ashamed */

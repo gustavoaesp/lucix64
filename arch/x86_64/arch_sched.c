@@ -6,6 +6,7 @@
 #include <arch/interrupt.h>
 #include <arch/paging.h>
 
+#include <lucix/cpu.h>
 #include <lucix/printk.h>
 #include <lucix/task.h>
 #include <lucix/vma.h>
@@ -22,6 +23,7 @@ void cpu_ktask_setup(struct task *t, void (*__entry)(void*), void *args)
     }
 
     memset(cpu, 0, sizeof(struct arch_x86_cpu_state));
+    t->ksp = (uint64_t)t->kstack + t->kstack_size;
 
     cpu->cs = _KERNEL_CS;
     cpu->ss = _KERNEL_DS;
@@ -44,50 +46,58 @@ extern void __iret_context_switch(
 
 void cpu_context_switch(void *new_cpu_state)
 {
-    /* Here we assume that current_task is the new task (this was done by the scheduler)*/
-    struct interrupt_frame *frame = NULL;
-    if (!new_cpu_state) {
-	    frame = (struct interrupt_frame*)((uint64_t)current_task->ksp - sizeof(struct interrupt_frame) + 8);
-    } else {
-	    frame = (struct interrupt_frame*)((uint64_t)current_task->kstack);
-    }
-    struct arch_x86_cpu_state *cpu_state = current_task->cpu_state;
-    if (new_cpu_state) {
-	    cpu_state = new_cpu_state;
-    }
-    uint64_t irq_state = cpu_irq_save();
+	struct cpu *cpu = cpu_get_cpu();
+	struct task *current_task = (cpu->current) ? cpu->current->task : cpu->idle;
+	/* Here we assume that current_task is the new task (this was done by the scheduler)*/
+	struct interrupt_frame *frame = NULL;
+	if (!new_cpu_state) {
+		frame = (struct interrupt_frame*)
+			((uint64_t)current_task->ksp - sizeof(struct interrupt_frame) + 8);
+	} else {
+		frame = (struct interrupt_frame*)((uint64_t)current_task->kstack);
+	}
+	struct arch_x86_cpu_state *cpu_state = current_task->cpu_state;
+	if (new_cpu_state) {
+		cpu_state = new_cpu_state;
+	}
+	uint64_t irq_state = cpu_irq_save();
 
-    g_tss.rsp[0] = (uint64_t)current_task->kstack + (PAGE_SIZE * 2);
+	g_tss.rsp[0] = (uint64_t)current_task->kstack + (PAGE_SIZE * 2);
 
-    /*
-    *   setup an interrupt frame on the *new* current process kstack
-    *   to 'iretq' into its last cpu state.
-    */
-    frame->exception.noerr.cs = cpu_state->cs;
-    frame->exception.noerr.rflags = cpu_state->rflags;
-    frame->exception.noerr.rip = cpu_state->rip;
-    frame->exception.noerr.rsp = cpu_state->rsp;
-    frame->exception.noerr.ss = cpu_state->ss;
-    frame->rax = cpu_state->rax;
-    frame->rbx = cpu_state->rbx;
-    frame->rcx = cpu_state->rcx;
-    frame->rdx = cpu_state->rdx;
-    frame->rbp = cpu_state->rbp;
-    frame->rdi = cpu_state->rdi;
-    frame->rsi = cpu_state->rsi;
-    frame->r8 = cpu_state->r8;
-    frame->r9 = cpu_state->r9;
-    frame->r10 = cpu_state->r10;
-    frame->r11 = cpu_state->r11;
-    frame->r12 = cpu_state->r12;
-    frame->r13 = cpu_state->r13;
-    frame->r14 = cpu_state->r14;
-    frame->r15 = cpu_state->r15;
+	/*
+	*   setup an interrupt frame on the *new* current process kstack
+	*   to 'iretq' into its last cpu state.
+	*/
+	frame->exception.noerr.cs = cpu_state->cs;
+	frame->exception.noerr.rflags = cpu_state->rflags;
+	frame->exception.noerr.rip = cpu_state->rip;
+	frame->exception.noerr.rsp = cpu_state->rsp;
+	frame->exception.noerr.ss = cpu_state->ss;
+	frame->rax = cpu_state->rax;
+	frame->rbx = cpu_state->rbx;
+	frame->rcx = cpu_state->rcx;
+	frame->rdx = cpu_state->rdx;
+	frame->rbp = cpu_state->rbp;
+	frame->rdi = cpu_state->rdi;
+	frame->rsi = cpu_state->rsi;
+	frame->r8 = cpu_state->r8;
+	frame->r9 = cpu_state->r9;
+	frame->r10 = cpu_state->r10;
+	frame->r11 = cpu_state->r11;
+	frame->r12 = cpu_state->r12;
+	frame->r13 = cpu_state->r13;
+	frame->r14 = cpu_state->r14;
+	frame->r15 = cpu_state->r15;
 
-    if (new_cpu_state)
-	    kfree(new_cpu_state);
+	if (new_cpu_state)
+		kfree(new_cpu_state);
 
-    cpu_irq_restore(irq_state);
-    __iret_context_switch(cpu_state->ss, frame);
-    /* we should not reach here*/
+	cpu_irq_restore(irq_state);
+	__iret_context_switch(cpu_state->ss, frame);
+	/* we should not reach here*/
+}
+
+void cpu_schedule(struct task *prev, struct task *next, struct cpu *cpu)
+{
+	g_tss.rsp[0] = (uint64_t)next->kstack + (PAGE_SIZE * 2);
 }

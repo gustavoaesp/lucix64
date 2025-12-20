@@ -5,6 +5,7 @@
 #include <arch/paging.h>
 #include <arch_generic/cpu.h>
 
+#include <lucix/cpu.h>
 #include <lucix/printk.h>
 #include <lucix/task.h>
 #include <lucix/sched.h>
@@ -103,40 +104,15 @@ void _exception_handler_stub_err(struct interrupt_frame* frame)
 void __irq_handler_stub(struct interrupt_frame* frame)
 {
 	if (frame->interrupt_id == 0x20) {
-		/*if (counter++ == 100) {
-			printf("Timer IRQ (aprox 1s)\n");
-			counter = 0;
-		}*/
-		if (current_task) {
-			struct arch_x86_cpu_state *cpu = current_task->cpu_state;
-			cpu->cs = frame->exception.noerr.cs;
-			cpu->ss = frame->exception.noerr.ss;
-			cpu->rax = frame->rax;
-			cpu->rbx = frame->rbx;
-			cpu->rcx = frame->rcx;
-			cpu->rdx = frame->rdx;
-			cpu->rbp = frame->rbp;
-			cpu->rdi = frame->rdi;
-			cpu->rsi = frame->rsi;
-			cpu->r8 = frame->r8;
-			cpu->r9 = frame->r9;
-			cpu->r10 = frame->r10;
-			cpu->r11 = frame->r11;
-			cpu->r12 = frame->r12;
-			cpu->r13 = frame->r13;
-			cpu->r14 = frame->r14;
-			cpu->r15 = frame->r15;
-			cpu->rsp = frame->exception.noerr.rsp;
-			cpu->rip = frame->exception.noerr.rip;
-			cpu->rflags = frame->exception.noerr.rflags;
-			if (cpu->cs == _KERNEL_CS) {
-				current_task->ksp = cpu->rsp;
-			} else {
-				current_task->ksp = (uint64_t)current_task->kstack + current_task->kstack_size;
-			}
-		}
+		struct cpu *cpu = cpu_get_cpu();
 		apic_write32(APIC_EOI_REG, 0);
 		sched_irq();
+		if (cpu->current && cpu->current->task->needs_sched) {
+			schedule();
+		}
+		if (!cpu->current && !list_empty(&cpu->runqueue.tasks)) {
+			schedule();
+		}
 
 		return;
 	} else {
@@ -163,4 +139,5 @@ void __irq_handler_stub(struct interrupt_frame* frame)
 			frame->r9
 		);
 	}
+
 }

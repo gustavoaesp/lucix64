@@ -18,6 +18,7 @@
 #include <pci/pci.h>
 
 #include <arch/acpi.h>
+#include <arch_generic/sched.h>
 
 struct initramfs initramfs_info;
 
@@ -57,12 +58,16 @@ void start_kernel(struct lucix_startup_data* startup_data)
 
 	sched_init();
 
-	sched_mk_kernel_task(kinit_task, NULL);
+	sched_per_cpu_init();
+	create_task(&task_init, TASK_USER);
+	cpu_ktask_setup(&task_init, kinit_task, NULL);
+	sched_add_task(&task_init);
 
-	/*	Given that at this point there is no active task in the scheduler, this will force setting
-	*	up an active task and context switch into that task
-	*/
-	sched_irq();
+	/*	Given that at this point there is no active task in the scheduler,
+	 *	this will force setting
+	 *	up an active task and context switch into that task
+	 **/
+	sched_start();
 
 	printf("Halt (should never reach here)\n");
 	while(1) {

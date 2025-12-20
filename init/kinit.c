@@ -1,3 +1,4 @@
+#include <lucix/cpu.h>
 #include <lucix/vfs.h>
 #include <lucix/printk.h>
 #include <lucix/utils.h>
@@ -33,26 +34,27 @@ static int DEBUG_print_contents(struct ramfs_inode *ino, int level) {
 
 void kinit_task(void *__unused)
 {
-    struct list_head* pos;
-    struct file *fstdout = NULL;
-    int ret = 0;
-    printf("kinit_task\n");
-    vfs_root("ramfs", 0, 0);
+	struct cpu *cpu = cpu_get_cpu();
+	struct list_head* pos;
+	struct file *fstdout = NULL;
+	int ret = 0;
+	printf("kinit_task\n");
+	vfs_root("ramfs", 0, 0);
 
-    unpack_initramfs();
+	unpack_initramfs();
 
-    /*
-     *	For now we create the device for the console in /dev
-     * */
-    vfs_mknod("/dev/console", S_IFCHR | 0666, MKDEV(5, 1));
-    fstdout = vfs_open("/dev/console", O_WRONLY, 0666);
+	/*
+	*	For now we create the device for the console in /dev
+	* */
+	vfs_mknod("/dev/console", S_IFCHR | 0666, MKDEV(5, 1));
+	fstdout = vfs_open("/dev/console", O_WRONLY, 0666);
 
-    current_task->fd_table->fd[1] = fstdout;
+	cpu->current->task->fd_table->fd[1] = fstdout;
 
-    do_execve("/bin/init", NULL, NULL);
+	do_execve("/bin/init", NULL, NULL);
 
-    /* Should not reach here (exec will jmp into userspace's entry point */
-    while(1) {
-        asm volatile ("hlt");
-    }
+	/* Should not reach here (exec will jmp into userspace's entry point */
+	while(1) {
+		asm volatile ("hlt");
+	}
 }
