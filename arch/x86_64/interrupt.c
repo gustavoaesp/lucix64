@@ -63,32 +63,18 @@ void _exception_handler_stub_noerr(struct interrupt_frame* frame)
 
 void _exception_handler_stub_err(struct interrupt_frame* frame)
 {
-	uint64_t irq_state = cpu_irq_save();
 	printf("Interrupt (ERR)! id: %d\n", frame->interrupt_id);
 		printf("err %x\n", frame->exception.err.err_code);
 		printf("rsp: %p\n", frame->exception.err.exception.rsp);
 		printf("rip: %p\n", frame->exception.err.exception.rip);
 		printf(" ss: %p\n", frame->exception.err.exception.ss);
 		printf(" cs: %p\n", frame->exception.err.exception.cs);
-	if (frame->interrupt_id == 14) {
-		uint32_t flags = 0;
-		uint64_t addr = __get_cr2();
-		flags |= (frame->exception.err.err_code & 0x01) ? PGFAULT_PROTECTION : 0;
-		flags |= (frame->exception.err.err_code & 0x02) ? PGFAULT_WRITE : 0;
-		flags |= (frame->exception.err.err_code & 0x04) ? PGFAULT_USR : 0;
-		flags |= (frame->exception.err.err_code & 0x10) ? PGFAULT_INSTRUCTION : 0;
-		printf("Handling addr %p\n", __get_cr2());
-		kernel_page_fault(addr, flags, frame->exception.err.exception.rip);
-		cpu_irq_restore(irq_state);
-		return;
-	}
 	if (frame->interrupt_id == 13) {
 		while(1);
 	}
 	if (frame->interrupt_id == 12) {
 		while(1);
 	}
-	cpu_irq_restore(irq_state);
 }
 
 void __irq_handler_stub(struct interrupt_frame* frame)

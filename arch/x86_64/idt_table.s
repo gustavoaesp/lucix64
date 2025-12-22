@@ -35,24 +35,24 @@
 .endm
 
 /* Interrupt function macros */
-.macro isr_no_err_stub	id
+.macro isr_no_err_stub	id	entry
 isr_stub_\id:
 	pushaq_macro
 	pushq	$\id
 	movq	%rsp,	%rdi
-	call	_exception_handler_stub_noerr
+	call	\entry
 	popq	%rax
 	popaq_macro
 	iretq
 .endm
 
-.macro isr_err_stub id
+.macro isr_err_stub	id	entry
 .global isr_stub_\id
 isr_stub_\id:
 	pushaq_macro
 	pushq	$\id
 	movq	%rsp,	%rdi
-	call	_exception_handler_stub_err
+	call	\entry
 	popq	%rax
 	popaq_macro
 	add	$0x08,	%rsp/* This little fucker made me lose sleep.*/
@@ -70,38 +70,38 @@ isr_irq_stub_\id:
 	iretq
 .endm
 
-isr_no_err_stub 0
-isr_no_err_stub 1
-isr_no_err_stub 2
-isr_no_err_stub 3
-isr_no_err_stub 4
-isr_no_err_stub 5
-isr_no_err_stub 6
-isr_no_err_stub 7
-isr_err_stub    8
-isr_no_err_stub 9
-isr_err_stub    10
-isr_err_stub    11
-isr_err_stub    12
-isr_err_stub    13
-isr_err_stub    14
-isr_no_err_stub 15
-isr_no_err_stub 16
-isr_err_stub    17
-isr_no_err_stub 18
-isr_no_err_stub 19
-isr_no_err_stub 20
-isr_no_err_stub 21
-isr_no_err_stub 22
-isr_no_err_stub 23
-isr_no_err_stub 24
-isr_no_err_stub 25
-isr_no_err_stub 26
-isr_no_err_stub 27
-isr_no_err_stub 28
-isr_no_err_stub 29
-isr_err_stub    30
-isr_no_err_stub 31
+isr_no_err_stub 0	_exception_handler_stub_noerr
+isr_no_err_stub 1	_exception_handler_stub_noerr
+isr_no_err_stub 2	_exception_handler_stub_noerr
+isr_no_err_stub 3	_exception_handler_stub_noerr
+isr_no_err_stub 4	_exception_handler_stub_noerr
+isr_no_err_stub 5	_exception_handler_stub_noerr
+isr_no_err_stub 6	_exception_handler_stub_noerr
+isr_no_err_stub 7	_exception_handler_stub_noerr
+isr_err_stub    8	_exception_handler_stub_err
+isr_no_err_stub 9	_exception_handler_stub_noerr
+isr_err_stub    10	_exception_handler_stub_err
+isr_err_stub    11	_exception_handler_stub_err
+isr_err_stub    12	_exception_handler_stub_err
+isr_err_stub    13	_exception_handler_stub_err
+isr_err_stub    14	__int_page_fault
+isr_no_err_stub 15	_exception_handler_stub_noerr
+isr_no_err_stub 16	_exception_handler_stub_noerr
+isr_err_stub    17	_exception_handler_stub_err
+isr_no_err_stub 18	_exception_handler_stub_noerr
+isr_no_err_stub 19	_exception_handler_stub_noerr
+isr_no_err_stub 20	_exception_handler_stub_noerr
+isr_no_err_stub 21	_exception_handler_stub_noerr
+isr_no_err_stub 22	_exception_handler_stub_noerr
+isr_no_err_stub 23	_exception_handler_stub_noerr
+isr_no_err_stub 24	_exception_handler_stub_noerr
+isr_no_err_stub 25	_exception_handler_stub_noerr
+isr_no_err_stub 26	_exception_handler_stub_noerr
+isr_no_err_stub 27	_exception_handler_stub_noerr
+isr_no_err_stub 28	_exception_handler_stub_noerr
+isr_no_err_stub 29	_exception_handler_stub_noerr
+isr_err_stub    30	_exception_handler_stub_err
+isr_no_err_stub 31	_exception_handler_stub_noerr
 
 .altmacro
 
