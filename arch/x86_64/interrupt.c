@@ -1,5 +1,4 @@
 #include <arch/apic.h>
-#include <arch/cpu_state.h>
 #include <arch/interrupt.h>
 #include <arch/gdt.h>
 #include <arch/paging.h>
@@ -71,7 +70,7 @@ void _exception_handler_stub_err(struct interrupt_frame* frame)
 		printf("rip: %p\n", frame->exception.err.exception.rip);
 		printf(" ss: %p\n", frame->exception.err.exception.ss);
 		printf(" cs: %p\n", frame->exception.err.exception.cs);
-		printf(" ts: %p\n", g_tss.rsp[0]);
+		/*printf(" ts: %p\n", &cpu->state.tss);*/
 	if (frame->interrupt_id == 14) {
 		/*printf("addr: %p\n", __get_cr2());
 		printf("rip:  %p\n", frame->exception.err.exception.rip);*/
@@ -107,7 +106,7 @@ void __irq_handler_stub(struct interrupt_frame* frame)
 		struct cpu *cpu = cpu_get_cpu();
 		apic_write32(APIC_EOI_REG, 0);
 		sched_irq();
-		if (cpu->current && cpu->current->task->needs_sched) {
+		if (cpu->current && cpu->current->needs_sched) {
 			schedule();
 		}
 		if (!cpu->current && !list_empty(&cpu->runqueue.tasks)) {

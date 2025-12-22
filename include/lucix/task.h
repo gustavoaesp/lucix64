@@ -33,13 +33,11 @@ struct task
 {
 	struct list_head list;
 	struct list_head children;
+	struct list_head qlist;
 	struct task *parent;
 
 	/* memory map (address space, can be shared)*/
 	struct procmm* mm;
-
-	/* File descriptor table */
-	struct fd_table *fd_table;
 
 	/* Kernel Stack */
 	void *kstack;
@@ -52,6 +50,9 @@ struct task
 
 	uint32_t pid;
 	uint32_t secondary_id;
+
+	/* File descriptor table */
+	struct fd_table *fd_table;
 
 	void *cpu_state;
 
@@ -68,7 +69,11 @@ extern obj_mem_cache_t *procmm_cache;
 /*
  *	Create a struct task with kernel stack, procmm, etc
  * */
-struct task *create_task(struct task *t, uint32_t flags);
-void setup_task_entry(struct task*, void (*)(void*), void *args);
+struct task *create_task(struct task *inplace, uint32_t flags);
+
+/*
+ *	Add child to task
+ * */
+void task_add_child(struct task *t, struct task *child);
 
 #endif

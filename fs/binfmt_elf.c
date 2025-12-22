@@ -152,7 +152,7 @@ static int elf_load_segments(struct file *file, struct elf_header_64 *header)
 		vm_prot_flags |= VM_USER;
 
 		do_mmap(
-			cpu->current->task->mm,
+			cpu->current->mm,
 			file,
 			PAGE_FRAME(entry->p_vaddr),
 			entry->size_in_file,

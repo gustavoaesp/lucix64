@@ -49,7 +49,7 @@ void kinit_task(void *__unused)
 	vfs_mknod("/dev/console", S_IFCHR | 0666, MKDEV(5, 1));
 	fstdout = vfs_open("/dev/console", O_WRONLY, 0666);
 
-	cpu->current->task->fd_table->fd[1] = fstdout;
+	cpu->current->fd_table->fd[1] = fstdout;
 
 	do_execve("/bin/init", NULL, NULL);
 

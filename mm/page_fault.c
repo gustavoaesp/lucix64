@@ -79,7 +79,7 @@ int kernel_page_fault(uintptr_t addr, uint32_t flags, uintptr_t pc)
 	struct cpu *cpu = cpu_get_cpu();
 	struct task *current_task = NULL;
 	if (cpu->current) {
-		current_task = cpu->current->task;
+		current_task = cpu->current;
 	} else {
 		/* fail miserably */
 		printf("WHAT THE FUCK\n");

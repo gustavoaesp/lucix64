@@ -13,10 +13,10 @@ int64_t sys_write(int64_t fd, int64_t src, int64_t count,
 	int64_t total = 0;
 	struct file *file = NULL;
 
-	if (fd >= cpu->current->task->fd_table->table_size)
+	if (fd >= cpu->current->fd_table->table_size)
 		return -EBADF;
 
-	file = cpu->current->task->fd_table->fd[fd];
+	file = cpu->current->fd_table->fd[fd];
 	if (!file) {
 		return -EBADF;
 	}

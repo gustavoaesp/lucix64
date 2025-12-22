@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#include <lucix/compiler.h>
+#include <lucix/cpu.h>
+
 struct arch_x86_cpu_state
 {
     /* These are pushed by the interrupt */
@@ -30,8 +33,22 @@ struct arch_x86_cpu_state
 	uint64_t	r15;
 };
 
-/*struct arch_x86_percpu_private
+struct tss_entry64
 {
-};*/
+	uint32_t _rsvd0;
+	uint64_t rsp[3];
+	uint64_t _rsvd1;
+	uint64_t IST[7];
+	uint64_t _rsvd2;
+	uint16_t _rsvd3;
+	uint16_t iopb;
+} __packed;
+
+typedef struct arch_x86_percpu_private
+{
+	struct tss_entry64 tss;
+} per_cpu_state_t;
+
+extern struct cpu up_cpu;
 
 #endif

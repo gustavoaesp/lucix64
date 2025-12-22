@@ -47,7 +47,7 @@ extern void __iret_context_switch(
 void cpu_context_switch(void *new_cpu_state)
 {
 	struct cpu *cpu = cpu_get_cpu();
-	struct task *current_task = (cpu->current) ? cpu->current->task : cpu->idle;
+	struct task *current_task = (cpu->current) ? cpu->current : cpu->idle;
 	/* Here we assume that current_task is the new task (this was done by the scheduler)*/
 	struct interrupt_frame *frame = NULL;
 	if (!new_cpu_state) {
@@ -62,7 +62,7 @@ void cpu_context_switch(void *new_cpu_state)
 	}
 	uint64_t irq_state = cpu_irq_save();
 
-	g_tss.rsp[0] = (uint64_t)current_task->kstack + (PAGE_SIZE * 2);
+	cpu->cpu_state.tss.rsp[0] = (uint64_t)current_task->kstack + (PAGE_SIZE * 2);
 
 	/*
 	*   setup an interrupt frame on the *new* current process kstack
@@ -99,5 +99,5 @@ void cpu_context_switch(void *new_cpu_state)
 
 void cpu_schedule(struct task *prev, struct task *next, struct cpu *cpu)
 {
-	g_tss.rsp[0] = (uint64_t)next->kstack + (PAGE_SIZE * 2);
+	cpu->cpu_state.tss.rsp[0] = (uint64_t)next->kstack + (PAGE_SIZE * 2);
 }

@@ -14,6 +14,10 @@ struct task *create_task(struct task *t, uint32_t flags)
 		return t;
 	}
 
+	INIT_LIST_HEAD(&t->qlist);
+	INIT_LIST_HEAD(&t->list);
+	INIT_LIST_HEAD(&t->children);
+
 	t->cpu_state = NULL;
 	struct page *p = alloc_pages(PGALLOC_KERNEL, 1);
 	t->kstack = p->vaddr;
@@ -32,4 +36,10 @@ struct task *create_task(struct task *t, uint32_t flags)
 	memset(t->fd_table->fd, 0, sizeof(struct file *) * 32);
 
 	return t;
+}
+
+void task_add_child(struct task *t, struct task *child)
+{
+	list_add(&child->list, &t->children);
+	child->parent = t;
 }

@@ -3,10 +3,11 @@
 #include <arch/gdt.h>
 #include <arch/interrupt.h>
 #include <arch/acpi.h>
+#include <arch/cpu_state.h>
 
 void setup_arch()
 {
 	paging_init();
-	setup_gdt();
+	setup_gdt(&up_cpu);
 	setup_interrupts();
 }

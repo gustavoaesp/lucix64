@@ -4,6 +4,7 @@
 #ifndef ASM
 
 #include <lucix/compiler.h>
+#include <lucix/cpu.h>
 
 struct gdt_entry {
     uint16_t limit_low;
@@ -156,17 +157,6 @@ struct gdt_ptr {
 /*void gdt_tss_set(struct tss_entry64 *tss);
 void gdt_tss_set_stack(void *kstack);*/
 
-struct tss_entry64
-{
-    uint32_t _rsvd0;
-	uint64_t rsp[3];
-	uint64_t _rsvd1;
-	uint64_t IST[7];
-	uint64_t _rsvd2;
-	uint16_t _rsvd3;
-	uint16_t iopb;
-} __packed;
-
 static inline void gdt_flush(struct gdt_entry *gdt, uint16_t gdt_size)
 {
     static struct gdt_ptr gptr;
@@ -177,7 +167,7 @@ static inline void gdt_flush(struct gdt_entry *gdt, uint16_t gdt_size)
     asm volatile("lgdt (%0)": : "r" (&gptr));
 }
 
-void setup_gdt(void);
+void setup_gdt(struct cpu *);
 
 /* implemented in asm */
 void _gdt_reload_segments(void);
@@ -185,13 +175,13 @@ void _gdt_reload_segments(void);
 #endif /* ASM */
 
 #define GDT_SEG_NULL_ASM() \
-    .word 0, 0; \
-    .byte 0, 0, 0, 0;
+	.word 0, 0; \
+	.byte 0, 0, 0, 0;
 
 #define GDT_SEG_ASM(type, base, lim) \
-    .word (((lim) >> 12) & 0xFFFF), ((base) & 0xFFFF); \
-    .byte (((base) >> 16) & 0xFF), (0x90 | (type)), \
-            (0xC0 | (((lim) >> 28) & 0xF)), (((base) >> 24) & 0xFF);
+	.word (((lim) >> 12) & 0xFFFF), ((base) & 0xFFFF); \
+	.byte (((base) >> 16) & 0xFF), (0x90 | (type)), \
+		(0xC0 | (((lim) >> 28) & 0xF)), (((base) >> 24) & 0xFF);
 
 #define GDT_DPL_KERNEL 0x0
 #define GDT_DPL_USER   0x3
@@ -221,7 +211,5 @@ void _gdt_reload_segments(void);
 #define _USER_DS (_USER_DS_N << 3)
 #define _GDT_TSS (_GDT_TSS_N << 3)
 #define _CPU_VAR (_CPU_VAR_N << 3)
-
-extern struct tss_entry64 g_tss;
 
 #endif

@@ -17,7 +17,7 @@ void cpu_setup_process(void **cpu_state, uintptr_t entry)
 	struct cpu *cpu = cpu_get_cpu();
 	struct task *current_task = NULL; 
 	if (cpu->current) {
-		current_task = cpu->current->task;
+		current_task = cpu->current;
 	} else {
 		/* fail miserably */
 		return;

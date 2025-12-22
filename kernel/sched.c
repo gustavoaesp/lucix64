@@ -63,7 +63,7 @@ void sched_irq()
 	}
 
 	if (cpu->current) {
-		cpu->current->task->needs_sched = 1;
+		cpu->current->needs_sched = 1;
 	} else if (list_empty(&cpu->runqueue.tasks)) {
 		return;
 	}
@@ -75,13 +75,10 @@ int sched_add_task(struct task *task)
 	 * cpu's in SMP, add logic for this in here */
 	struct cpu *cpu = cpu_get_cpu();
 	uint64_t irq_state;
-	/* TODO maybe have a special cache for this */
-	runqueue_entry_t *entry = kmalloc(sizeof(runqueue_entry_t), 0);
 
-	entry->task = task;
 	irq_state = cpu_irq_save();
 	{
-		list_add_tail(&entry->list, &cpu->runqueue.tasks);
+		list_add_tail(&task->qlist, &cpu->runqueue.tasks);
 	}
 	cpu_irq_restore(irq_state);
 	return 0;
@@ -93,55 +90,52 @@ void sched_start()
 	if(list_empty(&cpu->runqueue.tasks)) {
 		/* WTF */
 	}
-	cpu->current = (runqueue_entry_t*)cpu->runqueue.tasks.next;
-	cpu_mm_set_pgtable(cpu->current->task->mm->pgtable);
+	cpu->current = container_of(cpu->runqueue.tasks.next, struct task, qlist);
+	cpu_mm_set_pgtable(cpu->current->mm->pgtable);
 	cpu_context_switch(NULL);
 }
 
-static runqueue_entry_t *sched_pick_next_task()
+static struct task *sched_pick_next_task()
 {
 	struct cpu *cpu = cpu_get_cpu();
-	runqueue_entry_t *current_entry = cpu->current;
-	runqueue_entry_t *next = NULL;
-	uint64_t irq_state = cpu_irq_save();
+	struct task *next = NULL;
 
-	if (!current_entry && list_empty(&cpu->runqueue.tasks)) {
-		cpu_irq_restore(irq_state);
+	if (!cpu->current && list_empty(&cpu->runqueue.tasks)) {
 		return NULL;
 	}
 
-	if (!current_entry) {
-		next = (runqueue_entry_t*)cpu->runqueue.tasks.next;
+	if (!cpu->current || cpu->current->qlist.next == &cpu->runqueue.tasks) {
+		next = container_of(cpu->runqueue.tasks.next, struct task, qlist);
 	} else {
-		next = (runqueue_entry_t*)current_entry->list.next;
-	}
-	if (&next->list == &cpu->runqueue.tasks) {
-		next = (runqueue_entry_t*)cpu->runqueue.tasks.next;
+		next = container_of(cpu->current->qlist.next, struct task, qlist);
 	}
 
-	cpu_irq_restore(irq_state);
 	return next;
 }
 
 void schedule()
 {
 	struct cpu *cpu = cpu_get_cpu();
-	runqueue_entry_t *next = sched_pick_next_task();
-	struct task *next_task = NULL;
-	struct task *prev_task = NULL;
+	struct task *next = sched_pick_next_task();
+	struct task *prev = (cpu->current) ? cpu->current : cpu->idle;
 
-	next_task = (next) ? next->task : cpu->idle;
-	prev_task = (cpu->current) ? cpu->current->task : cpu->idle;
+	if (cpu->current) {
+		cpu->current->needs_sched = 0;
+	}
 
-	if (next_task == prev_task) {
+	if (!next) {
+		next = cpu->idle;
+	}
+
+	if (next == prev) {
 		return;
 	}
 
-	if (next_task->mm) {
-		cpu_mm_set_pgtable(next->task->mm->pgtable);
+	if (next->mm) {
+		cpu_mm_set_pgtable(next->mm->pgtable);
 	}
 
 	cpu->current = next;
-	cpu_schedule(prev_task, next_task, cpu);
-	cpu_switch_to(prev_task, next_task);
+	cpu_schedule(prev, next, cpu);
+	cpu_switch_to(prev, next);
 }

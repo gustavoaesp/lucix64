@@ -23,8 +23,8 @@ int64_t sys_open (int64_t path, int64_t flags, int64_t mode,
 		return -1;
 	}
 
-	fd = task_fd_table_get_free_fd_slot(cpu->current->task->fd_table);
-	cpu->current->task->fd_table->fd[fd] = fp;
+	fd = task_fd_table_get_free_fd_slot(cpu->current->fd_table);
+	cpu->current->fd_table->fd[fd] = fp;
 
 	return ret;
 }
