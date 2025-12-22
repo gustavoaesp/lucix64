@@ -70,13 +70,7 @@ void _exception_handler_stub_err(struct interrupt_frame* frame)
 		printf("rip: %p\n", frame->exception.err.exception.rip);
 		printf(" ss: %p\n", frame->exception.err.exception.ss);
 		printf(" cs: %p\n", frame->exception.err.exception.cs);
-		/*printf(" ts: %p\n", &cpu->state.tss);*/
 	if (frame->interrupt_id == 14) {
-		/*printf("addr: %p\n", __get_cr2());
-		printf("rip:  %p\n", frame->exception.err.exception.rip);*/
-		/*for(;;) {
-			asm volatile ("hlt");
-		}*/
 		uint32_t flags = 0;
 		uint64_t addr = __get_cr2();
 		flags |= (frame->exception.err.err_code & 0x01) ? PGFAULT_PROTECTION : 0;
@@ -86,7 +80,6 @@ void _exception_handler_stub_err(struct interrupt_frame* frame)
 		printf("Handling addr %p\n", __get_cr2());
 		kernel_page_fault(addr, flags, frame->exception.err.exception.rip);
 		cpu_irq_restore(irq_state);
-		//printf("Reading: %x\n", *((uint32_t*)addr));
 		return;
 	}
 	if (frame->interrupt_id == 13) {
@@ -97,8 +90,6 @@ void _exception_handler_stub_err(struct interrupt_frame* frame)
 	}
 	cpu_irq_restore(irq_state);
 }
-
-/*static int counter = 0;*/
 
 void __irq_handler_stub(struct interrupt_frame* frame)
 {

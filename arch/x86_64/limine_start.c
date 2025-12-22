@@ -38,7 +38,7 @@ static volatile struct limine_module_request module_request = {
 	.revision = 0
 };
 
-static struct cpu_memory_info* cpu_info;
+static struct cpu_memory_info* cpu_mem_info;
 static struct lucix_startup_data setup;
 static struct init_module module;
 
@@ -50,7 +50,7 @@ void _start(void)
 
 	//setup_upper(kernel_address_request.response->physical_base);
 
-	cpu_info = initialize_memory(memmap_request.response);
+	cpu_mem_info = initialize_memory(memmap_request.response);
 
 	efi_fb_data.width = framebuffer->width;
 	efi_fb_data.height = framebuffer->height;
@@ -63,7 +63,7 @@ void _start(void)
 		module.size = file->size;
 	}
 
-	setup.mem_info = cpu_info;
+	setup.mem_info = cpu_mem_info;
 	setup.ramdisk = &module;
 
 	g_kernel_phys_base = kernel_address_request.response->physical_base;

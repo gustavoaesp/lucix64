@@ -22,13 +22,6 @@
 
 struct initramfs initramfs_info;
 
-static void hcf(void)
-{
-	for(;;) {
-		asm ("hlt");
-	}
-}
-
 void start_kernel(struct lucix_startup_data* startup_data)
 {
 	mem_init(startup_data->mem_info);
@@ -37,18 +30,8 @@ void start_kernel(struct lucix_startup_data* startup_data)
 
 	setup_arch();
 
-	/*console_init(startup_data->framebuffer);*/
-	if(acpi_init()) {
-		printf("ACPI NOT FOUND\n");
-	}
-
-	init_apic();
-
 	initramfs_info.addr = startup_data->ramdisk->addr;
 	initramfs_info.size = startup_data->ramdisk->size;
-
-	printf("module_addr: %p\n", startup_data->ramdisk->addr);
-	printf("module_size: %d\n", startup_data->ramdisk->size);
 
 	vfs_init();
 

@@ -116,13 +116,10 @@ static void hpet_calibration()
 
 void init_apic()
 {
-	printf("Before apic base\n");
 	uint64_t apic_base = (uint64_t)get_apic_base();
-	printf("Found apic at base 0x%p\n", apic_base);
 
 	set_apic_base(apic_base);
 
-//	apic_regs = ioremap(apic_base, PAGE_SIZE * 2, IOREMAP_NOCACHE | IOREMAP_WRITETHROUGH);
 	apic_regs = PA2VA((uint64_t)apic_base);
 	apic_write32(APIC_SPURIOUS_INT_VECTOR_REG, 0x1ff);
 	__disable_pic();
