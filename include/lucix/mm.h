@@ -15,10 +15,15 @@
 #define	MAX_MEM_ZONES	(64)
 
 /* First 8 bits of the flags uint32_t define the usage */
-#define PAGE_USAGE_CACHE        (0x01)
-#define PAGE_USAGE_ANON         (0x02)
+enum PAGE_USAGE {
+	PAGE_USAGE_PRIVATE = 0,
+	PAGE_USAGE_CACHE = 1,
+	PAGE_USAGE_ANON = 2
+};
+
 /* The remaining 24 bits are for flags */
 #define PAGE_CACHE_FLAG_DIRTY   (0x100)
+#define PAGE_CACHE_COW		(0x200)
 
 struct mem_zone_info {
 	uint64_t phys_base;
@@ -31,7 +36,7 @@ struct cpu_memory_info {
 };
 
 struct page_cache_attr {
-	struct file_page_mapping *owner;
+	struct page_mapping *owner;
 };
 
 /*
@@ -41,9 +46,9 @@ struct page_cache_attr {
  * */
 struct page {
 	struct list_head list;
+	uint32_t usage;
 	uint32_t flags;
 	uint32_t refcnt;
-	void* vaddr;
 	union {
 		struct page_cache_attr page_cache_attr;
 	};
@@ -109,8 +114,28 @@ static inline void page_unref(struct page *p)
 {
 	uint64_t cpu_irq = cpu_irq_save();
 	p->refcnt--;
+	if (!p->refcnt)
+		free_pages(p, 0);
 	cpu_irq_restore(cpu_irq);
 }
 
+static inline void page_mk_dirty(struct page *p)
+{
+	uint64_t cpu_irq = cpu_irq_save();
+	p->flags |= PAGE_CACHE_FLAG_DIRTY;
+	cpu_irq_restore(cpu_irq);
+}
+
+static inline void page_mk_clean(struct page *p)
+{
+	uint64_t cpu_irq = cpu_irq_save();
+	p->flags &= ~(PAGE_CACHE_FLAG_DIRTY);
+	cpu_irq_restore(cpu_irq);
+}
+
+static inline void page_set_usage(struct page *p, uint32_t usage)
+{
+	p->usage = usage;
+}
 
 #endif

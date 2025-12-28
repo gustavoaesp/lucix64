@@ -1,5 +1,6 @@
 #include <arch/paging.h>
 #include <lucix/mm.h>
+#include <lucix/page.h>
 #include <lucix/vm.h>
 #include <lucix/vma.h>
 #include <lucix/task.h>
@@ -65,7 +66,8 @@ static void map_contiguous(void* pgtable, uint64_t phys_addr, void* vaddr, uint6
 	for (int pml4i = pml4_idx; pml4i <= (PML4_FROM_VA(size)) + pml4_idx; ++pml4i) {
 		uint64_t* pdpt = NULL;
 		if (!(pml4[pml4i] & PML4_PRESENT_FLAG)) {
-			pdpt = alloc_pages(PGALLOC_KERNEL, 0)->vaddr;
+			struct page *pdpt_page = alloc_pages(PGALLOC_KERNEL, 0);
+			pdpt = get_page_vaddr(pdpt_page);
 			pml4[pml4i] = PAGE_FRAME(VA2PA(pdpt))
 				| PML4_PRESENT_FLAG | PML4_RW_FLAG | PML4_USER;
 		} else {
@@ -74,7 +76,8 @@ static void map_contiguous(void* pgtable, uint64_t phys_addr, void* vaddr, uint6
 		for (; pdpti < 512 && page_count < num_pages; pdpti++) {
 			uint64_t *pdet = NULL;
 			if (!(pdpt[pdpti] & PDPT_PRESENT_FLAG)) {
-				pdet = alloc_pages(PGALLOC_KERNEL, 0)->vaddr;
+				struct page *pdet_page = alloc_pages(PGALLOC_KERNEL, 0);
+				pdet = get_page_vaddr(pdet_page);
 				pdpt[pdpti] = PAGE_FRAME(VA2PA(pdet))
 					| PDPT_PRESENT_FLAG | PDPT_RW_FLAG | PDPT_USER;
 			} else {
@@ -89,7 +92,8 @@ static void map_contiguous(void* pgtable, uint64_t phys_addr, void* vaddr, uint6
 					continue;
 				}
 				if (!(pdet[pdeti] & PDET_PRESENT_FLAG)) {
-					pte = alloc_pages(PGALLOC_KERNEL, 0)->vaddr;
+					struct page *pte_page = alloc_pages(PGALLOC_KERNEL, 0);
+					pte = get_page_vaddr(pte_page);
 					pdet[pdeti] = PAGE_FRAME(VA2PA(pte))
 						| PDET_PRESENT_FLAG | PDET_RW_FLAG | PDET_USER;
 				} else {
@@ -123,7 +127,8 @@ void* x86_64_vm_map_pages(void* pgtable, struct page **pages, uint64_t vaddr_sta
 
 void paging_init()
 {
-	kernel_pgtable = alloc_pages(PGALLOC_KERNEL, 0)->vaddr;
+	struct page *kernel_pgtable_page = alloc_pages(PGALLOC_KERNEL, 0);
+	kernel_pgtable = get_page_vaddr(kernel_pgtable_page);
 	// MAP THE FIRST 4GB of physical memory
 	map_contiguous(kernel_pgtable, 0, (void*)BASE_PHYS_IDENTITY, 0x10000000000, 1, VM_WRITE | VM_READ | VM_EXEC);
 	// MAP THE KERNEL EXECUTABLE
@@ -142,7 +147,8 @@ void *map_vm_zone(struct vm_zone *zone, uint32_t flags)
 
 void *cpu_mm_create_page_table()
 {
-	void *pgtable = alloc_pages(PGALLOC_KERNEL, 0)->vaddr;
+	struct page *pgtable_page = alloc_pages(PGALLOC_KERNEL, 0);
+	void *pgtable = get_page_vaddr(pgtable_page);
 	memcpy(pgtable, kernel_pgtable, PAGE_SIZE);
 
 	return pgtable;

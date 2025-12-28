@@ -2,6 +2,7 @@
 #include <lucix/fs/inode.h>
 #include <lucix/fs/mapping.h>
 #include <lucix/mm.h>
+#include <lucix/page.h>
 #include <arch/paging.h>
 
 int64_t generic_file_write(struct file *file, const void *src, size_t count, size_t *pos)
@@ -17,6 +18,7 @@ int64_t generic_file_write(struct file *file, const void *src, size_t count, siz
 		size_t remaining = count - total;
 		size_t pg_offset = *pos % PAGE_SIZE;
 		struct page *dst_page = NULL;
+		void *page_vaddr = NULL;
 
 		size_t to_write = (remaining >= PAGE_SIZE) ? (PAGE_SIZE - pg_offset) : remaining;
 
@@ -26,10 +28,10 @@ int64_t generic_file_write(struct file *file, const void *src, size_t count, siz
 			&dst_page,
 			NULL
 		);
+		page_vaddr = get_page_vaddr(dst_page);
 
-		memcpy(dst_page->vaddr + pg_offset, src, to_write);
-
-		dst_page->flags |= PAGE_CACHE_FLAG_DIRTY;
+		memcpy(page_vaddr + pg_offset, src, to_write);
+		page_mk_dirty(dst_page);
 
 		ino->f_map->ops->write_end(file, ino->f_map,
 			*pos, to_write,
@@ -62,11 +64,11 @@ int64_t generic_file_read(struct file *file, void *dst, size_t count, size_t *po
 
 		if (!ino->f_map->pages[pg_index]) {
 			struct page *new_page = alloc_pages(PGALLOC_KERNEL, 0);
-			new_page->page_cache_attr.owner = ino->f_map;
-			new_page->flags = PAGE_USAGE_CACHE;
+			set_page_cache_owner(new_page, ino->f_map);
+			page_set_usage(new_page, PAGE_USAGE_CACHE);
+			page_ref(new_page);
 			ino->f_map->pages[pg_index] = new_page;
 			ino->f_map->ops->readpage(file, ino->f_map, new_page, pg_index * PAGE_SIZE);
-			page_ref(new_page);
 		}
 
 		to_read = (remaining_bytes >= PAGE_SIZE) ? (PAGE_SIZE - pg_offset) : remaining_bytes;
@@ -76,7 +78,11 @@ int64_t generic_file_read(struct file *file, void *dst, size_t count, size_t *po
 			to_read = ino->size - (*pos);
 		}
 
-		memcpy(dst, ino->f_map->pages[pg_index]->vaddr + pg_offset, to_read);
+		memcpy(
+			dst,
+			get_page_vaddr(ino->f_map->pages[pg_index]) + pg_offset,
+			to_read
+		);
 
 		*pos += to_read;
 		dst += to_read;

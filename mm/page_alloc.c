@@ -2,6 +2,7 @@
 #include <arch/paging.h>
 #include <lucix/list.h>
 #include <lucix/mm.h>
+#include <lucix/page.h>
 
 struct alloc_state {
 	uint64_t num_zones;
@@ -40,12 +41,12 @@ void __init_memmap(struct memory_zone* zone)
 		INIT_LIST_HEAD(&zone->mem_map[page].list);
 		zone->mem_map[page].flags = 0;
 
-		if (zone->flags & MEMZONE_IDENTITY_MAPPED) {
+		/*if (zone->flags & MEMZONE_IDENTITY_MAPPED) {
 			zone->mem_map[page].vaddr = PA2VA(
 				zone->phys_base
 				+ (page + (zone->abs_pfn_start - zone->abs_pfn_base)) * PAGE_SIZE
 			);
-		}
+		}*/
 	}
 }
 
@@ -293,9 +294,7 @@ struct page *alloc_pages(uint32_t flags, uint32_t order)
 		}
 	}
 
-	if (p->vaddr) {
-		memset(p->vaddr, 0, PAGE_SIZE * (1 << order));
-	}
+	memset(get_page_vaddr(p), 0, PAGE_SIZE * (1 << order));
 
 	p->refcnt = 0;
 

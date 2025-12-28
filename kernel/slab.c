@@ -1,5 +1,6 @@
 #include <lucix/slab.h>
 #include <lucix/mm.h>
+#include <lucix/page.h>
 #include <lucix/printk.h>
 #include <arch/paging.h>
 
@@ -131,11 +132,12 @@ obj_mem_cache_t* create_obj_mem_cache(uint32_t object_size, uint32_t flags, uint
 slab_t* __new_slab(obj_mem_cache_t* cache)
 {
 	struct page* slab_pages = alloc_pages(PGALLOC_KERNEL, cache->page_order);
+	void *slab_pages_vaddr = get_page_vaddr(slab_pages);
 	slab_t* slab;
 	int mem_offset = 0;
 
 	if (cache->flags & OBJMEM_CACHE_SLAB_META_IN_BLOCK) {
-		slab = slab_pages->vaddr;
+		slab = slab_pages_vaddr;
 		mem_offset = sizeof(slab_t) + sizeof(uint32_t) * cache->objs_per_slab;
 	} else {
 		slab = (slab_t*)kmalloc(sizeof(slab_t) + sizeof(uint32_t) * cache->objs_per_slab, 0);
@@ -153,7 +155,7 @@ slab_t* __new_slab(obj_mem_cache_t* cache)
 	SLAB_FREE_LISTP(slab)[cache->objs_per_slab - 1] = FREE_LIST_END;
 	slab->next_free = 0;
 	slab->in_use = 0;
-	slab->mem = slab_pages->vaddr + mem_offset;
+	slab->mem = slab_pages_vaddr + mem_offset;
 
 	return slab;
 }

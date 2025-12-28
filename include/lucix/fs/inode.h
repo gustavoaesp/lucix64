@@ -42,7 +42,7 @@ struct inode {
 
 	uint32_t refcnt;
 
-	struct file_page_mapping *f_map;
+	struct page_mapping *f_map;
 	struct inode_ops *ops;
 	struct file_ops *default_fops;
 	struct super_block* sb;

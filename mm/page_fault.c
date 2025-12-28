@@ -3,6 +3,7 @@
 
 #include <lucix/cpu.h>
 #include <lucix/mm.h>
+#include <lucix/page.h>
 #include <lucix/page_fault.h>
 #include <lucix/task.h>
 #include <lucix/vma.h>
@@ -41,11 +42,14 @@ static int anonymous_page_handler(struct vm_fault *vm_fault)
 			if (vm_fault->vma->prot & VM_MAYWRITE) {
 				struct page *new_page;/* = alloc_pages(PGALLOC_KERNEL, 0);*/
 				if (page->refcnt > 1) {
+					void *page_vaddr = get_page_vaddr(page);
 					new_page = alloc_pages(PGALLOC_KERNEL, 0);
-					memcpy(new_page->vaddr, page->vaddr, PAGE_SIZE);
+					void *new_page_vaddr = get_page_vaddr(new_page);
+					memcpy(new_page_vaddr, page_vaddr, PAGE_SIZE);
 					page_ref(new_page);
 					page_unref(page);
 					vm_fault->new_page = new_page;
+					page_set_usage(vm_fault->new_page, PAGE_USAGE_ANON);
 				} else {
 					/* we are the only ref to this page, keep it and just remap it */
 					vm_fault->new_page = page;

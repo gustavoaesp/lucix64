@@ -1,4 +1,5 @@
 #include <lucix/mm.h>
+#include <lucix/page.h>
 #include <lucix/task.h>
 #include <lucix/utils.h>
 #include <arch_generic/paging.h>
@@ -20,7 +21,7 @@ struct task *create_task(struct task *t, uint32_t flags)
 
 	t->cpu_state = NULL;
 	struct page *p = alloc_pages(PGALLOC_KERNEL, 1);
-	t->kstack = p->vaddr;
+	t->kstack = get_page_vaddr(p);
 	t->kstack_size = PAGE_SIZE << 1;
 	t->ksp = (uint64_t)t->kstack + t->kstack_size;
 
